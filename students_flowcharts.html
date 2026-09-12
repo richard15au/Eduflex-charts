@@ -1,0 +1,2810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduFlex - Student Academic Workflow Simulator</title>
+    <style>
+        :root {
+            --bg-main: #0b0e14;
+            --bg-card: #151a24;
+            --bg-node: #1c222e;
+            --border-node: #333d4f;
+            --text-main: #f1f5f9;
+            --text-muted: #8492a6;
+            --color-blue: #3a86ff;
+            --color-blue-glow: rgba(58, 134, 255, 0.45);
+            --color-green: #06d6a0;
+            --color-green-glow: rgba(6, 214, 160, 0.35);
+            --color-red: #ff4a4a;
+            --color-red-glow: rgba(255, 74, 74, 0.35);
+            --color-amber: #ffd166;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            height: 100vh;
+            padding: 16px 20px;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+        }
+
+        /* 2-Column Dashboard Layout */
+        .app-layout {
+            display: grid;
+            grid-template-columns: 370px 1fr;
+            gap: 18px;
+            width: 100%;
+            max-width: 1920px;
+            height: calc(100vh - 32px);
+            align-items: stretch;
+        }
+
+        /* ==========================================
+           LEFT SIDEBAR CONTROL CONSOLE
+           ========================================== */
+        .sidebar-panel {
+            background-color: var(--bg-card);
+            border: 1px solid #232b3a;
+            border-radius: 16px;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            overflow-y: auto;
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+        }
+
+        .sidebar-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar-panel::-webkit-scrollbar-track {
+            background: #0f131a;
+        }
+        .sidebar-panel::-webkit-scrollbar-thumb {
+            background: #252e40;
+            border-radius: 3px;
+        }
+
+        /* Header Branding */
+        .header {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border-bottom: 1px solid #232b3a;
+            padding-bottom: 16px;
+        }
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo-badge {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 13px;
+            letter-spacing: 1.5px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+        }
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #0f131b;
+            border: 1px solid #232a3b;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: #94a3b8;
+        }
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: var(--color-green);
+            box-shadow: 0 0 8px var(--color-green);
+        }
+        .title-group h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.3px;
+            line-height: 1.3;
+        }
+        .title-group p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 3px;
+            line-height: 1.4;
+        }
+
+        /* Telemetry Dashboard in Sidebar */
+        .dashboard {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .dash-item {
+            background-color: #10141d;
+            border: 1px solid #202737;
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            transition: border-color 0.2s;
+        }
+        .dash-item:hover {
+            border-color: #334057;
+        }
+        .dash-item .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .dash-item .val {
+            font-size: 17px;
+            font-weight: 700;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .badge-pill {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 10px;
+            background: #1e2638;
+            color: #93c5fd;
+            border: 1px solid #2b384e;
+        }
+
+        /* Interactive Workflow Segmented Selector */
+        
+        /* Dual Role Selector & Branch Chips */
+        .hidden-flowchart {
+            display: none !important;
+        }
+
+        .role-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            background: #090c12;
+            border: 1px solid #1e2637;
+            border-radius: 8px;
+            padding: 3px;
+            gap: 4px;
+            margin-bottom: 10px;
+        }
+        .role-tab {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 8px 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+        .role-tab:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .role-tab.active {
+            background: #2563eb;
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+        }
+
+        .branch-chips-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 4px;
+        }
+        .branch-chip {
+            flex: 1 1 calc(33.33% - 4px);
+            background: #10141d;
+            border: 1px solid #1e2637;
+            color: var(--text-muted);
+            padding: 6px 4px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 10.5px;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .branch-chip:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.05);
+            border-color: #334057;
+        }
+        .branch-chip.active {
+            background: var(--color-blue);
+            color: #ffffff;
+            border-color: var(--color-blue);
+            box-shadow: 0 2px 8px var(--color-blue-glow);
+        }
+
+        
+        #selector-instructor-branches .wf-tab {
+            font-size: 10px;
+            padding: 7px 2px;
+        }
+        .workflow-selector {
+            display: flex;
+            background: #090c12;
+            border: 1px solid #1e2637;
+            border-radius: 8px;
+            padding: 3px;
+            gap: 4px;
+            margin-top: 4px;
+        }
+        .wf-tab {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 7px 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .wf-tab:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .wf-tab.active {
+            background: var(--color-blue);
+            color: #ffffff;
+            box-shadow: 0 2px 8px var(--color-blue-glow);
+        }
+
+        .progress-bar-track {
+            width: 100%;
+            height: 6px;
+            background: #1c2331;
+            border-radius: 3px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #3a86ff, #06d6a0);
+            border-radius: 3px;
+            transition: width 0.15s ease-out;
+        }
+        .blue-txt { color: var(--color-blue); }
+        .green-txt { color: var(--color-green); }
+
+        /* Controls Section */
+        .controls-card {
+            background: #10141d;
+            border: 1px solid #202737;
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .section-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .btn-group-primary {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .btn-row-secondary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .btn {
+            background: transparent;
+            border: 1px solid #232b3b;
+            color: var(--text-muted);
+            padding: 11px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.05);
+            border-color: #334057;
+        }
+        .btn.primary {
+            background-color: var(--color-blue);
+            border-color: var(--color-blue);
+            color: #ffffff;
+            padding: 13px 16px;
+            font-size: 14px;
+            box-shadow: 0 4px 14px var(--color-blue-glow);
+        }
+        .btn.primary:hover {
+            background-color: #2b75ed;
+            border-color: #2b75ed;
+        }
+        .btn.complete-state {
+            background-color: var(--color-green) !important;
+            border-color: var(--color-green) !important;
+            color: #0c2e24 !important;
+            font-weight: 700;
+            box-shadow: 0 4px 14px var(--color-green-glow);
+        }
+
+        /* Slider Controls */
+        .slider-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #090c12;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #1e2637;
+        }
+        input[type=range] {
+            flex: 1;
+            accent-color: var(--color-blue);
+            background: #232b3a;
+            height: 6px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        #speedVal {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--color-blue);
+            min-width: 44px;
+            text-align: right;
+        }
+
+        /* Flowchart Symbols Legend in Sidebar */
+        .legend-section {
+            border-top: 1px solid #232b3a;
+            padding-top: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .legend-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .legend-swatch {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            border: 1px solid #404e67;
+            flex-shrink: 0;
+        }
+        .swatch-oval { border-radius: 6px; background: #1c222e; }
+        .swatch-rect { border-radius: 2px; background: #1c222e; }
+        .swatch-diamond { transform: rotate(45deg); width: 8px; height: 8px; background: #1c222e; margin: 0 2px; }
+        .swatch-doc { border-radius: 2px 2px 5px 5px; background: #1c222e; }
+        .swatch-blue { background: var(--color-blue); border-color: var(--color-blue); }
+        .swatch-green { background: var(--color-green); border-color: var(--color-green); }
+        .swatch-red { background: var(--color-red); border-color: var(--color-red); }
+
+        /* ==========================================
+           RIGHT MAIN FLOWCHART VIEWPORT
+           ========================================== */
+        .canvas-card {
+            background: #0d1017;
+            border: 1px solid #202736;
+            border-radius: 16px;
+            overflow: auto;
+            position: relative;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.6);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .canvas-card::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .canvas-card::-webkit-scrollbar-track {
+            background: #090c12;
+        }
+        .canvas-card::-webkit-scrollbar-thumb {
+            background: #252e40;
+            border-radius: 4px;
+        }
+
+        /* Floating Zoom & Fit Toolbar */
+        .canvas-toolbar {
+            position: sticky;
+            top: 14px;
+            right: 18px;
+            align-self: flex-end;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(16, 21, 30, 0.88);
+            backdrop-filter: blur(12px);
+            border: 1px solid #2b364a;
+            padding: 6px 10px;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            margin: 14px 18px -48px auto;
+        }
+        .tool-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: #94a3b8;
+            padding: 5px 9px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            user-select: none;
+        }
+        .tool-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: #334057;
+        }
+        .tool-btn.active {
+            background: #2563eb;
+            color: #ffffff;
+            border-color: #3b82f6;
+        }
+        .zoom-display {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--color-blue);
+            min-width: 44px;
+            text-align: center;
+        }
+
+        /* SVG Viewport Wrapper with Scale Transform */
+        .svg-viewport-wrapper {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px 60px;
+            transform-origin: top center;
+            transition: transform 0.2s ease-out;
+            min-width: 1280px;
+        }
+
+        svg.flowchart-svg {
+            display: block;
+            width: 100%;
+            max-width: 1280px;
+            height: auto;
+        }
+
+        /* SVG Node & Connector Styles */
+
+        /* Connector paths: Strictly thin stroke, NO FILL */
+        .conn-line, .connector, path.conn-line, path.connector {
+            fill: none !important;
+            stroke: #2e384d;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: stroke 0.3s ease, stroke-width 0.3s ease, filter 0.3s ease;
+        }
+
+        .node-shape.diamond-shape {
+            stroke: #d97706;
+            fill: #241a10;
+        }
+        .node-shape.start-shape,
+        .node-shape.success-shape {
+            stroke: #059669;
+            fill: #06281e;
+        }
+        .node-shape.error-shape {
+            stroke: var(--color-red);
+            fill: #261418;
+        }
+        .text-success {
+            fill: #34d399 !important;
+        }
+        .text-error {
+            fill: #fca5a5 !important;
+        }
+
+        .conn-line {
+            fill: none;
+            stroke: #2e384d;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: stroke 0.3s ease, stroke-width 0.3s ease, filter 0.3s ease;
+        }
+        .conn-line.active-path {
+            stroke: var(--color-blue) !important;
+            stroke-width: 3.5 !important;
+            filter: drop-shadow(0 0 8px var(--color-blue));
+        }
+        .conn-line.completed-path {
+            stroke: var(--color-green) !important;
+            stroke-width: 2.5 !important;
+        }
+        .conn-line.completed-error-path {
+            stroke: var(--color-red) !important;
+            stroke-width: 2.5 !important;
+            filter: drop-shadow(0 0 6px var(--color-red-glow));
+        }
+        .conn-line.error-path {
+            stroke: var(--color-red) !important;
+            stroke-width: 2 !important;
+            stroke-dasharray: 5, 4;
+        }
+        .conn-line.secondary-path {
+            stroke: #404b62;
+            stroke-width: 2;
+            stroke-dasharray: 4, 4;
+        }
+
+        /* Node Base Styles */
+        .node-shape {
+            fill: #151a24;
+            stroke: var(--border-node);
+            stroke-width: 2;
+            transition: all 0.3s ease;
+        }
+        .node-text {
+            font-size: 13px;
+            font-weight: 600;
+            fill: #e2e8f0;
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: none;
+            user-select: none;
+            letter-spacing: 0.2px;
+        }
+
+        /* Node States */
+        .node-group {
+            cursor: pointer;
+        }
+        .node-group:hover .node-shape {
+            stroke: #4b5873;
+        }
+        .node-group.active-node .node-shape {
+            stroke: var(--color-blue) !important;
+            fill: #182338 !important;
+            stroke-width: 2.5 !important;
+            filter: drop-shadow(0 0 16px var(--color-blue-glow));
+        }
+        .node-group.active-node .node-text {
+            fill: #ffffff !important;
+            font-weight: 700 !important;
+        }
+        .node-group.completed-node .node-shape {
+            stroke: var(--color-green) !important;
+            fill: #11201d !important;
+            stroke-width: 2 !important;
+            filter: drop-shadow(0 0 8px rgba(6, 214, 160, 0.2));
+        }
+        .node-group.completed-node .node-text {
+            fill: #bbf7d0 !important;
+        }
+        .node-group.error-node .node-shape {
+            stroke: var(--color-red) !important;
+            fill: #261418 !important;
+            stroke-width: 2 !important;
+        }
+        .node-group.error-node .node-text {
+            fill: #fca5a5 !important;
+        }
+        .node-group.completed-error-node .node-shape {
+            stroke: var(--color-red) !important;
+            fill: #261418 !important;
+            stroke-width: 2 !important;
+            filter: drop-shadow(0 0 8px rgba(255, 74, 74, 0.35));
+        }
+        .node-group.completed-error-node .node-text {
+            fill: #fca5a5 !important;
+        }
+
+        /* Path Labels & Clickable Badges */
+        .badge-rect {
+            fill: #141923;
+            stroke: #2b3548;
+            stroke-width: 1.5;
+            rx: 6;
+            transition: all 0.2s ease;
+        }
+        .badge-rect.badge-yes {
+            stroke: #059669;
+            fill: #06281e;
+        }
+        .badge-rect.badge-no {
+            stroke: #dc2626;
+            fill: #2d1216;
+        }
+        .badge-text {
+            font-size: 11px;
+            font-weight: 700;
+            text-anchor: middle;
+            dominant-baseline: central;
+            letter-spacing: 0.5px;
+            user-select: none;
+        }
+        .badge-text.yes { fill: #34d399; }
+        .badge-text.no { fill: #f87171; }
+        .badge-text.branch { fill: #94a3b8; }
+
+        .clickable-badge {
+            cursor: pointer;
+        }
+        .clickable-badge:hover .badge-rect {
+            stroke: #3a86ff;
+            fill: #162238;
+        }
+        .clickable-badge:hover .badge-text.branch {
+            fill: #ffffff;
+        }
+        .clickable-badge.selected-branch .badge-rect {
+            stroke: var(--color-blue) !important;
+            fill: #1a2a47 !important;
+            filter: drop-shadow(0 0 8px rgba(58, 134, 255, 0.6));
+        }
+        .clickable-badge.selected-branch .badge-text.branch {
+            fill: #ffffff !important;
+        }
+
+        /* Secondary Functions Container Box */
+        .secondary-panel-bg {
+            fill: #0c1017;
+            stroke: #252e40;
+            stroke-dasharray: 6, 6;
+            stroke-width: 1.5;
+            rx: 14;
+        }
+        .secondary-panel-title {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            fill: #64748b;
+            text-anchor: start;
+        }
+
+        /* Animated Workflow Token */
+        #workflow-token {
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .token-core {
+            fill: #ffffff;
+            stroke: var(--color-blue);
+            stroke-width: 2.5;
+        }
+        .token-glow {
+            fill: var(--color-blue);
+            opacity: 0.45;
+            filter: url(#token-glow-blur);
+        }
+        .token-pulse-ring {
+            fill: none;
+            stroke: var(--color-blue);
+            stroke-width: 1.5;
+            opacity: 0.7;
+            transform-origin: center;
+            animation: tokenRingPulse 1.8s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+        }
+
+        @keyframes tokenRingPulse {
+            0% {
+                r: 7;
+                opacity: 0.8;
+            }
+            100% {
+                r: 20;
+                opacity: 0;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            body {
+                overflow: auto;
+                height: auto;
+            }
+            .app-layout {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            .canvas-card {
+                height: 800px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-layout">
+    <!-- ==========================================
+         LEFT SIDEBAR: CONTROLS & TELEMETRY
+         ========================================== -->
+    <aside class="sidebar-panel">
+        <!-- Header Branding -->
+        <header class="header">
+            <div class="header-top">
+                <div class="logo-badge">EDUFLEX</div>
+                <div class="system-status">
+                    <span class="status-dot"></span>
+                    <span>Online</span>
+                </div>
+            </div>
+            <div class="title-group">
+                <h1>Student Academic Workflow</h1>
+                <p>Formal System Flowchart &amp; Physical Vector Path Execution Engine</p>
+            </div>
+        </header>
+
+        <!-- Telemetry Monitor & Workflow Selector -->
+        <section class="dashboard">
+            <div class="dash-item" id="dash-workflow-card">
+                <!-- Dual-Role Workflow Selector -->
+                <div class="role-selector">
+                    <button class="role-tab active" id="role-student" onclick="setRole('student')">🎓 Student</button>
+                    <button class="role-tab" id="role-instructor" onclick="setRole('instructor')">👨‍🏫 Instructor</button>
+                    <button class="role-tab" id="role-admin" onclick="setRole('admin')">🛡️ Admin</button>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="label">ACTIVE WORKFLOW</span>
+                    <span id="wf-badge" class="badge-pill">15 Steps</span>
+                </div>
+                <div id="wf-name" class="val blue-txt">Student Academic Workflow</div>
+                
+                <!-- Student Interactive Branch Selectors -->
+                <div class="workflow-selector" id="selector-student-branches">
+                    <button class="wf-tab active" id="tab-assignment" onclick="selectWorkflow('assignment')" title="Run Assignment Workflow (Left Branch)">Assignment</button>
+                    <button class="wf-tab" id="tab-materials" onclick="selectWorkflow('materials')" title="Run Learning Materials Workflow (Center Branch)">Materials</button>
+                    <button class="wf-tab" id="tab-quiz" onclick="selectWorkflow('quiz')" title="Run Quiz/Exam Workflow (Right Branch)">Quiz / Exam</button>
+                </div>
+
+                <!-- Instructor Interactive Branch Selectors (7 Branches) -->
+                <div class="workflow-selector" id="selector-instructor-branches" style="display: none;">
+                    <button class="wf-tab active" id="tab-inst-assignments" onclick="selectWorkflow('inst-assignments')" title="Assignments Workflow">Assignments</button>
+                    <button class="wf-tab" id="tab-inst-materials" onclick="selectWorkflow('inst-materials')" title="Learning Materials Workflow">Learning Materials</button>
+                    <button class="wf-tab" id="tab-inst-quizzes" onclick="selectWorkflow('inst-quizzes')" title="Quizzes / Exams Workflow">Quizzes / Exams</button>
+                </div>
+                <!-- Admin Interactive Branch Selectors -->
+                <div class="workflow-selector" id="selector-admin-branches" style="display: none;">
+                    <button class="wf-tab active" id="tab-admin-users" onclick="selectWorkflow('admin-users')" title="User Management Workflow">Users</button>
+                    <button class="wf-tab" id="tab-admin-courses" onclick="selectWorkflow('admin-courses')" title="Course Management Workflow">Courses</button>
+                    <button class="wf-tab" id="tab-admin-enrollment" onclick="selectWorkflow('admin-enrollment')" title="Enrollment Workflow">Enrollment</button>
+                </div>
+                <div id="admin-enroll-options" class="branch-chips-grid" style="display: none; margin-top: 6px;">
+                    <button class="branch-chip active" id="chip-enroll-yes" onclick="selectWorkflow('admin-enrollment')">✓ Eligible (YES)</button>
+                    <button class="branch-chip" id="chip-enroll-no" onclick="selectWorkflow('admin-enrollment-rejected')">✕ Rejected (NO)</button>
+                </div>
+            </div>
+
+            <div class="dash-item">
+                <div class="label">Current Node</div>
+                <div id="wf-node" class="val blue-txt">START</div>
+            </div>
+
+            <div class="dash-item">
+                <div class="label">Path Progress</div>
+                <div id="wf-progress" class="val">0%</div>
+                <div class="progress-bar-track">
+                    <div id="wf-progress-bar" class="progress-bar-fill"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Controls Section -->
+        <section class="controls-card">
+            <div class="section-label">Workflow Actions</div>
+            <div class="btn-group-primary">
+                <button class="btn primary" id="btn-play" onclick="handlePlayClick()">
+                    <span id="play-icon">▶</span>
+                    <span id="play-text">Play Workflow</span>
+                </button>
+            </div>
+            <div class="btn-row-secondary">
+                <button class="btn" id="btn-pause" onclick="handlePauseClick()">
+                    <span>⏸</span>
+                    <span>Pause</span>
+                </button>
+                <button class="btn" id="btn-reset" onclick="handleResetClick()">
+                    <span>↺</span>
+                    <span>Reset</span>
+                </button>
+            </div>
+            <div>
+                <div class="section-label" style="margin-bottom: 8px;">Animation Speed</div>
+                <div class="slider-wrapper">
+                    <input type="range" id="speedSlider" min="0.5" max="3" step="0.25" value="1.5" oninput="handleSpeedChange(this.value)">
+                    <span id="speedVal">1.5x</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Flowchart Symbols & State Legend -->
+        <div class="legend-section">
+            <div class="section-label">Symbol Notation</div>
+            <div class="legend-grid">
+                <div class="legend-item">
+                    <span class="legend-swatch swatch-oval"></span>
+                    <span>Start / End</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-swatch swatch-rect"></span>
+                    <span>Process / Page</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-swatch swatch-diamond"></span>
+                    <span>Decision</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-swatch swatch-doc"></span>
+                    <span>Submission Doc</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-swatch swatch-blue"></span>
+                    <span>Active Step</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-swatch swatch-green"></span>
+                    <span>Completed</span>
+                </div>
+                <div class="legend-item" style="grid-column: span 2;">
+                    <span class="legend-swatch swatch-red"></span>
+                    <span>Decision Loop / Rejection</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ==========================================
+         RIGHT VIEWPORT: FULL FLOWCHART CANVAS
+         ========================================== -->
+    <main class="canvas-card">
+        <!-- Floating Zoom & Fit Toolbar -->
+        <div class="canvas-toolbar">
+            <button class="tool-btn" onclick="zoomOut()" title="Zoom Out">－</button>
+            <span id="zoom-label" class="zoom-display">100%</span>
+            <button class="tool-btn" onclick="zoomIn()" title="Zoom In">＋</button>
+            <button class="tool-btn" id="btn-fit" onclick="toggleFitView()" title="Fit Full Workflow to Screen">⤢ Fit</button>
+            <button class="tool-btn" onclick="resetZoom()" title="Reset Zoom to 100%">1:1</button>
+        </div>
+
+        <div class="svg-viewport-wrapper" id="svg-wrapper">
+            <svg class="flowchart-svg" id="svg-student" viewBox="0 0 1360 1440" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <!-- SVG Filter for Token Glow -->
+                    <filter id="token-glow-blur" x="-100%" y="-100%" width="300%" height="300%">
+                        <feGaussianBlur stdDeviation="4" result="blur" />
+                    </filter>
+
+                    <!-- Arrowhead Markers -->
+                    <marker id="arrow-default" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                        <path d="M 0 1 L 9 5 L 0 9 z" fill="#3b475e" />
+                    </marker>
+                    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                        <path d="M 0 1 L 9 5 L 0 9 z" fill="#3a86ff" />
+                    </marker>
+                    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                        <path d="M 0 1 L 9 5 L 0 9 z" fill="#06d6a0" />
+                    </marker>
+                    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                        <path d="M 0 1 L 9 5 L 0 9 z" fill="#ff4a4a" />
+                    </marker>
+                    <marker id="arrow-sec" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                        <path d="M 0 1 L 9 5 L 0 9 z" fill="#4b5773" />
+                    </marker>
+
+                    <!-- Subtle Grid Background -->
+                    <pattern id="canvas-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#141822" stroke-width="1" />
+                    </pattern>
+                </defs>
+
+                <!-- Background Grid -->
+                <rect width="1360" height="1440" fill="url(#canvas-grid)" />
+
+                <!-- ==========================================
+                     SECONDARY STUDENT PORTAL PANEL (RIGHT OF HUB)
+                     ========================================== -->
+                <g id="secondary-panel">
+                    <rect class="secondary-panel-bg" x="890" y="270" width="350" height="210" />
+                    <text class="secondary-panel-title" x="915" y="295">SECONDARY PORTAL FUNCTIONS</text>
+                </g>
+
+                <!-- ==========================================
+                     CONNECTOR PATHS LAYER
+                     ========================================== -->
+                <g id="connectors-layer">
+                    <!-- 1. START to Login / Register -->
+                    <path id="path-start-login" class="conn-line" d="M 680 72 V 117" marker-end="url(#arrow-default)" />
+
+                    <!-- 2. Login to Valid? -->
+                    <path id="path-login-valid" class="conn-line" d="M 680 163 V 210" marker-end="url(#arrow-default)" />
+
+                    <!-- 3. Valid? --NO--> Login Error -->
+                    <path id="path-valid-error" class="conn-line error-path" d="M 620 245 H 525" marker-end="url(#arrow-red)" />
+
+                    <!-- 4. Login Error back to Login / Register -->
+                    <path id="path-error-login" class="conn-line error-path" d="M 375 245 H 330 V 140 H 595" marker-end="url(#arrow-red)" />
+
+                    <!-- 5. Valid? --YES--> Student Dashboard -->
+                    <path id="path-valid-dashboard" class="conn-line" d="M 680 280 V 346" marker-end="url(#arrow-default)" />
+
+                    <!-- Secondary Portal Connectors -->
+                    <path id="path-dash-secondary-bus" class="conn-line secondary-path" d="M 770 370 H 925" />
+                    <path id="path-sec-calendar" class="conn-line secondary-path" d="M 925 370 V 325 H 980" marker-end="url(#arrow-sec)" />
+                    <path id="path-sec-announcements" class="conn-line secondary-path" d="M 925 370 V 365 H 980" marker-end="url(#arrow-sec)" />
+                    <path id="path-sec-messages" class="conn-line secondary-path" d="M 925 370 V 405 H 980" marker-end="url(#arrow-sec)" />
+                    <path id="path-sec-profile" class="conn-line secondary-path" d="M 925 370 V 445 H 980" marker-end="url(#arrow-sec)" />
+
+                    <!-- 6. Student Dashboard to My Courses -->
+                    <path id="path-dashboard-courses" class="conn-line" d="M 680 394 V 457" marker-end="url(#arrow-default)" />
+
+                    <!-- 7. My Courses to Course Overview -->
+                    <path id="path-courses-overview" class="conn-line" d="M 680 503 V 557" marker-end="url(#arrow-default)" />
+
+                    <!-- 8. Course Overview to Activity? -->
+                    <path id="path-overview-activity" class="conn-line" d="M 680 603 V 655" marker-end="url(#arrow-default)" />
+
+                    <!-- 9. Activity? to Assignment Details (LEFT) -->
+                    <path id="path-activity-assignment" class="conn-line" d="M 615 690 H 250 V 777" marker-end="url(#arrow-default)" />
+
+                    <!-- 10. Activity? to Learning Materials (CENTER) -->
+                    <path id="path-activity-materials" class="conn-line" d="M 680 725 V 777" marker-end="url(#arrow-default)" />
+
+                    <!-- 11. Activity? to Quiz / Exam Details (RIGHT) -->
+                    <path id="path-activity-quiz" class="conn-line" d="M 745 690 H 1070 V 777" marker-end="url(#arrow-default)" />
+
+                    <!-- LEFT BRANCH: ASSIGNMENT -->
+                    <!-- 12. Assignment Details to Upload File -->
+                    <path id="path-assignment-upload" class="conn-line" d="M 250 823 V 867" marker-end="url(#arrow-default)" />
+
+                    <!-- 13. Upload File to Uploaded? -->
+                    <path id="path-upload-uploaded" class="conn-line" d="M 250 913 V 965" marker-end="url(#arrow-default)" />
+
+                    <!-- 14. Uploaded? --NO--> Upload Required -->
+                    <path id="path-uploaded-req" class="conn-line error-path" d="M 190 1000 H 155" marker-end="url(#arrow-red)" />
+
+                    <!-- 15. Upload Required back to Upload File -->
+                    <path id="path-req-upload" class="conn-line error-path" d="M 85 977 V 890 H 165" marker-end="url(#arrow-red)" />
+
+                    <!-- 16. Uploaded? --YES--> Submit Assignment -->
+                    <path id="path-uploaded-submit" class="conn-line" d="M 250 1035 V 1100" marker-end="url(#arrow-default)" />
+
+                    <!-- 17. Submit Assignment to Submission Confirmed -->
+                    <path id="path-submit-confirmed" class="conn-line" d="M 250 1146 V 1200" marker-end="url(#arrow-default)" />
+
+                    <!-- 18. Submission Confirmed to Grade & Feedback -->
+                    <path id="path-confirmed-grade" class="conn-line" d="M 250 1246 V 1306" marker-end="url(#arrow-default)" />
+
+                    <!-- CENTER BRANCH: LEARNING MATERIALS -->
+                    <!-- 19. Learning Materials to Open / Download -->
+                    <path id="path-materials-download" class="conn-line" d="M 680 823 V 867" marker-end="url(#arrow-default)" />
+
+                    <!-- RIGHT BRANCH: QUIZ / EXAM -->
+                    <!-- 20. Quiz Details to Available? -->
+                    <path id="path-quiz-avail" class="conn-line" d="M 1070 823 V 875" marker-end="url(#arrow-default)" />
+
+                    <!-- 21. Available? --NO--> Upcoming Quiz -->
+                    <path id="path-avail-upcoming" class="conn-line error-path" d="M 1130 910 H 1175" marker-end="url(#arrow-red)" />
+
+                    <!-- 22. Available? --YES--> Start Quiz / Exam -->
+                    <path id="path-avail-start" class="conn-line" d="M 1070 945 V 1020" marker-end="url(#arrow-default)" />
+
+                    <!-- 23. Start Quiz / Exam to Quiz Result -->
+                    <path id="path-start-result" class="conn-line" d="M 1070 1066 V 1121" marker-end="url(#arrow-default)" />
+                </g>
+
+                <!-- ==========================================
+                     DECISION & BRANCH BADGE LABELS
+                     ========================================== -->
+                <g id="badge-labels-layer">
+                    <!-- Valid? YES / NO -->
+                    <rect class="badge-rect badge-yes" x="664" y="303" width="32" height="18" />
+                    <text class="badge-text yes" x="680" y="312">YES</text>
+
+                    <rect class="badge-rect badge-no" x="557" y="235" width="28" height="18" />
+                    <text class="badge-text no" x="571" y="244">NO</text>
+
+                    <text class="badge-text no" x="325" y="195" font-size="10">Retry</text>
+
+                    <!-- Activity? Branches (Clickable to switch workflow) -->
+                    <g class="clickable-badge selected-branch" id="badge-branch-assignment" onclick="selectWorkflow('assignment')" title="Click to run Assignment workflow">
+                        <rect class="badge-rect" x="390" y="679" width="90" height="22" id="svg-badge-assignment" />
+                        <text class="badge-text branch" x="435" y="690">Assignment</text>
+                    </g>
+
+                    <g class="clickable-badge" id="badge-branch-materials" onclick="selectWorkflow('materials')" title="Click to run Materials workflow">
+                        <rect class="badge-rect" x="640" y="742" width="80" height="20" id="svg-badge-materials" />
+                        <text class="badge-text branch" x="680" y="752">Materials</text>
+                    </g>
+
+                    <g class="clickable-badge" id="badge-branch-quiz" onclick="selectWorkflow('quiz')" title="Click to run Quiz/Exam workflow">
+                        <rect class="badge-rect" x="870" y="679" width="90" height="22" id="svg-badge-quiz" />
+                        <text class="badge-text branch" x="915" y="690">Quiz / Exam</text>
+                    </g>
+
+                    <!-- Uploaded? YES / NO -->
+                    <rect class="badge-rect badge-yes" x="234" y="1057" width="32" height="18" />
+                    <text class="badge-text yes" x="250" y="1066">YES</text>
+
+                    <rect class="badge-rect badge-no" x="158" y="990" width="28" height="18" />
+                    <text class="badge-text no" x="172" y="999">NO</text>
+
+                    <text class="badge-text no" x="78" y="934" font-size="10">Required</text>
+
+                    <!-- Available? YES / NO -->
+                    <rect class="badge-rect badge-yes" x="1054" y="973" width="32" height="18" />
+                    <text class="badge-text yes" x="1070" y="982">YES</text>
+
+                    <rect class="badge-rect badge-no" x="1138" y="900" width="28" height="18" />
+                    <text class="badge-text no" x="1152" y="909">NO</text>
+                </g>
+
+                <!-- ==========================================
+                     NODES LAYER (PROPER FLOWCHART SYMBOLS)
+                     ========================================== -->
+                <g id="nodes-layer">
+                    <!-- 1. START (Oval) -->
+                    <g id="node-start" class="node-group">
+                        <rect class="node-shape" x="620" y="28" width="120" height="44" rx="22" ry="22" />
+                        <text class="node-text" x="680" y="50">START</text>
+                    </g>
+
+                    <!-- 2. Login / Register (Rectangle - Page/Action) -->
+                    <g id="node-login" class="node-group">
+                        <rect class="node-shape" x="595" y="117" width="170" height="46" rx="8" ry="8" />
+                        <text class="node-text" x="680" y="140">Login / Register</text>
+                    </g>
+
+                    <!-- 3. Valid? (Diamond - Decision) -->
+                    <g id="node-valid" class="node-group">
+                        <polygon class="node-shape" points="680,210 740,245 680,280 620,245" />
+                        <text class="node-text" x="680" y="245">Valid?</text>
+                    </g>
+
+                    <!-- 4. Login Error (Rectangle - Error state) -->
+                    <g id="node-error" class="node-group error-node">
+                        <rect class="node-shape" x="375" y="222" width="150" height="46" rx="8" ry="8" />
+                        <text class="node-text" x="450" y="245">Login Error</text>
+                    </g>
+
+                    <!-- 5. Student Dashboard (Rectangle - Main Hub) -->
+                    <g id="node-dashboard" class="node-group">
+                        <rect class="node-shape" x="590" y="346" width="180" height="48" rx="8" ry="8" />
+                        <text class="node-text" x="680" y="370">Student Dashboard</text>
+                    </g>
+
+                    <!-- SECONDARY PORTAL FUNCTIONS (Off Dashboard) -->
+                    <g id="node-calendar" class="node-group">
+                        <rect class="node-shape" x="980" y="307" width="180" height="36" rx="6" ry="6" />
+                        <text class="node-text" x="1070" y="325">📅 Calendar</text>
+                    </g>
+                    <g id="node-announcements" class="node-group">
+                        <rect class="node-shape" x="980" y="347" width="180" height="36" rx="6" ry="6" />
+                        <text class="node-text" x="1070" y="365">📢 Announcements</text>
+                    </g>
+                    <g id="node-messages" class="node-group">
+                        <rect class="node-shape" x="980" y="387" width="180" height="36" rx="6" ry="6" />
+                        <text class="node-text" x="1070" y="405">💬 Messages</text>
+                    </g>
+                    <g id="node-profile" class="node-group">
+                        <rect class="node-shape" x="980" y="427" width="180" height="36" rx="6" ry="6" />
+                        <text class="node-text" x="1070" y="445">⚙️ Profile / Settings</text>
+                    </g>
+
+                    <!-- 6. My Courses (Rectangle) -->
+                    <g id="node-courses" class="node-group">
+                        <rect class="node-shape" x="595" y="457" width="170" height="46" rx="8" ry="8" />
+                        <text class="node-text" x="680" y="480">My Courses</text>
+                    </g>
+
+                    <!-- 7. Course Overview (Rectangle) -->
+                    <g id="node-overview" class="node-group">
+                        <rect class="node-shape" x="595" y="557" width="170" height="46" rx="8" ry="8" />
+                        <text class="node-text" x="680" y="580">Course Overview</text>
+                    </g>
+
+                    <!-- 8. Activity? (Diamond - Decision) -->
+                    <g id="node-activity" class="node-group">
+                        <polygon class="node-shape" points="680,655 745,690 680,725 615,690" />
+                        <text class="node-text" x="680" y="690">Activity?</text>
+                    </g>
+
+                    <!-- ==========================================
+                         BRANCH 1 (LEFT): ASSIGNMENT WORKFLOW
+                         ========================================== -->
+                    <!-- 9. Assignment Details (Rectangle) -->
+                    <g id="node-assign-details" class="node-group" onclick="selectWorkflow('assignment')">
+                        <rect class="node-shape" x="165" y="777" width="170" height="46" rx="8" ry="8" />
+                        <text class="node-text" x="250" y="800">Assignment Details</text>
+                    </g>
+
+                    <!-- 10. Upload File (Rectangle) -->
+                    <g id="node-upload-file" class="node-group">
+                        <rect class="node-shape" x="165" y="867" width="170" height="46" rx="8" ry="8" />
+                        <text class="node-text" x="250" y="890">Upload File</text>
+                    </g>
+
+                    <!-- 11. Uploaded? (Diamond - Decision) -->
+                    <g id="node-uploaded" class="node-group">
+                        <polygon class="node-shape" points="250,965 310,1000 250,1035 190,1000" />
+                        <text class="node-text" x="250" y="1000">Uploaded?</text>
+                    </g>
+
+                    <!-- 12. Upload Required (Rectangle - Error/Warning) -->
+                    <g id="node-upload-req" class="node-group error-node">
+                        <rect class="node-shape" x="15" y="977" width="140" height="46" rx="8" ry="8" />
+                        <text class="node-text" x="85" y="1000">Upload Required</text>
+                    </g>
+
+                    <!-- 13. Submit Assignment (Document Shape - Wavy Bottom) -->
+                    <g id="node-submit-assign" class="node-group">
+                        <!-- Standard Flowchart Document Symbol -->
+                        <path class="node-shape" d="M 165 1106 A 6 6 0 0 1 171 1100 H 329 A 6 6 0 0 1 335 1106 V 1140 Q 292 1148 250 1142 Q 208 1136 165 1146 Z" />
+                        <text class="node-text" x="250" y="1122">Submit Assignment</text>
+                    </g>
+
+                    <!-- 14. Submission Confirmed (Document Shape - Wavy Bottom) -->
+                    <g id="node-sub-confirmed" class="node-group">
+                        <path class="node-shape" d="M 165 1206 A 6 6 0 0 1 171 1200 H 329 A 6 6 0 0 1 335 1206 V 1240 Q 292 1248 250 1242 Q 208 1236 165 1246 Z" />
+                        <text class="node-text" x="250" y="1222">Submission Confirmed</text>
+                    </g>
+
+                    <!-- 15. Grade & Feedback (Data / Result Shape - Parallelogram) -->
+                    <g id="node-grade-feedback" class="node-group">
+                        <!-- Flowchart Data/Result Symbol: Slanted Parallelogram -->
+                        <polygon class="node-shape" points="176,1306 340,1306 324,1354 160,1354" />
+                        <text class="node-text" x="250" y="1330">Grade &amp; Feedback</text>
+                    </g>
+
+                    <!-- ==========================================
+                         BRANCH 2 (CENTER): LEARNING MATERIALS
+                         ========================================== -->
+                    <!-- 16. Learning Materials (Rectangle) -->
+                    <g id="node-materials" class="node-group" onclick="selectWorkflow('materials')">
+                        <rect class="node-shape" x="595" y="777" width="170" height="46" rx="8" ry="8" />
+                        <text class="node-text" x="680" y="800">Learning Materials</text>
+                    </g>
+
+                    <!-- 17. Open / Download (Rectangle) -->
+                    <g id="node-download" class="node-group">
+                        <rect class="node-shape" x="595" y="867" width="170" height="46" rx="8" ry="8" />
+                        <text class="node-text" x="680" y="890">Open / Download</text>
+                    </g>
+
+                    <!-- ==========================================
+                         BRANCH 3 (RIGHT): QUIZ / EXAM WORKFLOW
+                         ========================================== -->
+                    <!-- 18. Quiz / Exam Details (Rectangle) -->
+                    <g id="node-quiz-details" class="node-group" onclick="selectWorkflow('quiz')">
+                        <rect class="node-shape" x="985" y="777" width="170" height="46" rx="8" ry="8" />
+                        <text class="node-text" x="1070" y="800">Quiz / Exam Details</text>
+                    </g>
+
+                    <!-- 19. Available? (Diamond - Decision) -->
+                    <g id="node-available" class="node-group">
+                        <polygon class="node-shape" points="1070,875 1130,910 1070,945 1010,910" />
+                        <text class="node-text" x="1070" y="910">Available?</text>
+                    </g>
+
+                    <!-- 20. Upcoming Quiz (Rectangle - Alert/Notice) -->
+                    <g id="node-upcoming" class="node-group error-node">
+                        <rect class="node-shape" x="1175" y="887" width="140" height="46" rx="8" ry="8" />
+                        <text class="node-text" x="1245" y="910">Upcoming Quiz</text>
+                    </g>
+
+                    <!-- 21. Start Quiz / Exam (Rectangle) -->
+                    <g id="node-start-quiz" class="node-group">
+                        <rect class="node-shape" x="985" y="1020" width="170" height="46" rx="8" ry="8" />
+                        <text class="node-text" x="1070" y="1043">Start Quiz / Exam</text>
+                    </g>
+
+                    <!-- 22. Quiz Result (Data / Result Shape - Parallelogram) -->
+                    <g id="node-quiz-result" class="node-group">
+                        <polygon class="node-shape" points="996,1121 1160,1121 1144,1169 980,1169" />
+                        <text class="node-text" x="1070" y="1145">Quiz Result</text>
+                    </g>
+                </g>
+
+                <!-- ==========================================
+                     PHYSICAL VECTOR TOKEN (ANIMATED TRAVELLER)
+                     ========================================== -->
+                <g id="workflow-token" transform="translate(680, 50)">
+                    <!-- Ambient outer pulse ring -->
+                    <circle class="token-pulse-ring" cx="0" cy="0" r="14" />
+                    <!-- Glowing radiant halo -->
+                    <circle class="token-glow" cx="0" cy="0" r="10" />
+                    <!-- Crisp circular core -->
+                    <circle class="token-core" cx="0" cy="0" r="6" />
+                </g>
+            </svg>
+
+            <!-- INSTRUCTOR WORKFLOW SVG -->
+            <svg class="flowchart-svg hidden-flowchart" id="svg-instructor" viewBox="0 0 1360 1440" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <!-- Arrowhead Markers directly inside this SVG -->
+        <marker id="arrow-default-inst" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="#3b475e" />
+        </marker>
+        <marker id="arrow-blue-inst" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="#3a86ff" />
+        </marker>
+        <marker id="arrow-green-inst" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="#06d6a0" />
+        </marker>
+        <marker id="arrow-red-inst" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="#ff4a4a" />
+        </marker>
+    </defs>
+
+    <!-- Flow Connectors Layer (Thin lines, NO fill) -->
+    <g id="inst-connectors-layer">
+        <!-- Central Spine -->
+        <path id="path-inst-start-login" class="conn-line" fill="none" d="M 680 72 V 117" marker-end="url(#arrow-default-inst)" />
+        <path id="path-inst-login-valid" class="conn-line" fill="none" d="M 680 163 V 210" marker-end="url(#arrow-default-inst)" />
+
+        <!-- Login Error Loop -->
+        <path id="path-inst-valid-error" class="conn-line error-path" fill="none" d="M 620 245 H 525" marker-end="url(#arrow-red-inst)" />
+        <path id="path-inst-error-login" class="conn-line error-path" fill="none" d="M 375 245 H 350 V 140 H 595" marker-end="url(#arrow-red-inst)" />
+
+        <!-- Spine Continued -->
+        <path id="path-inst-valid-dash" class="conn-line" fill="none" d="M 680 280 V 346" marker-end="url(#arrow-default-inst)" />
+        <path id="path-inst-dash-courses" class="conn-line" fill="none" d="M 680 394 V 457" marker-end="url(#arrow-default-inst)" />
+        <path id="path-inst-courses-overview" class="conn-line" fill="none" d="M 680 503 V 557" marker-end="url(#arrow-default-inst)" />
+        <path id="path-inst-overview-choose" class="conn-line" fill="none" d="M 680 603 V 655" marker-end="url(#arrow-default-inst)" />
+
+        <!-- Choose Activity Branches -->
+        <path id="path-inst-choose-asgn" class="conn-line" fill="none" d="M 615 690 H 170 V 777" marker-end="url(#arrow-default-inst)" />
+        <path id="path-inst-choose-mat" class="conn-line" fill="none" d="M 680 725 V 767" marker-end="url(#arrow-default-inst)" />
+        <path id="path-inst-choose-quiz" class="conn-line" fill="none" d="M 745 690 H 1080 V 767" marker-end="url(#arrow-default-inst)" />
+
+        <!-- Branch 1: Assignments (Left Column: X=170) -->
+        <path id="path-inst-asgn-create" class="conn-line" fill="none" d="M 170 823 V 877" marker-end="url(#arrow-default-inst)" />
+        <path id="path-inst-asgn-instr" class="conn-line" fill="none" d="M 170 923 V 977" marker-end="url(#arrow-default-inst)" />
+        <path id="path-inst-asgn-due" class="conn-line" fill="none" d="M 170 1023 V 1077" marker-end="url(#arrow-default-inst)" />
+        <path id="path-inst-asgn-publish" class="conn-line" fill="none" d="M 170 1123 V 1177" marker-end="url(#arrow-default-inst)" />
+        <path id="path-inst-asgn-avail" class="conn-line" fill="none" d="M 170 1223 V 1277" marker-end="url(#arrow-green-inst)" />
+
+        <!-- Branch 2: Learning Materials (Center Column: X=680) -->
+        <path id="path-inst-mat-type" class="conn-line" fill="none" d="M 680 813 V 867" marker-end="url(#arrow-default-inst)" />
+        <path id="path-inst-mat-res" class="conn-line" fill="none" d="M 680 913 V 967" marker-end="url(#arrow-default-inst)" />
+        <path id="path-inst-mat-upload" class="conn-line" fill="none" d="M 680 1013 V 1067" marker-end="url(#arrow-default-inst)" />
+        <path id="path-inst-mat-check" class="conn-line" fill="none" d="M 680 1113 V 1150" marker-end="url(#arrow-default-inst)" />
+        
+        <!-- Upload Error Loop -->
+        <path id="path-inst-mat-err" class="conn-line error-path" fill="none" d="M 625 1180 H 535" marker-end="url(#arrow-red-inst)" />
+        <path id="path-inst-mat-retry" class="conn-line error-path" fill="none" d="M 385 1180 H 350 V 1090 H 590" marker-end="url(#arrow-red-inst)" />
+
+        <!-- Upload Success Path -->
+        <path id="path-inst-mat-publish" class="conn-line" fill="none" d="M 680 1210 V 1247" marker-end="url(#arrow-default-inst)" />
+        <path id="path-inst-mat-avail" class="conn-line" fill="none" d="M 680 1293 V 1337" marker-end="url(#arrow-green-inst)" />
+
+        <!-- Branch 3: Quizzes / Exams (Right Column: X=1080) -->
+        <path id="path-inst-quiz-create" class="conn-line" fill="none" d="M 1080 813 V 867" marker-end="url(#arrow-default-inst)" />
+        <path id="path-inst-quiz-quest" class="conn-line" fill="none" d="M 1080 913 V 967" marker-end="url(#arrow-default-inst)" />
+        <path id="path-inst-quiz-time" class="conn-line" fill="none" d="M 1080 1013 V 1067" marker-end="url(#arrow-default-inst)" />
+        <path id="path-inst-quiz-publish" class="conn-line" fill="none" d="M 1080 1113 V 1167" marker-end="url(#arrow-default-inst)" />
+        <path id="path-inst-quiz-avail" class="conn-line" fill="none" d="M 1080 1213 V 1267" marker-end="url(#arrow-green-inst)" />
+    </g>
+
+    <!-- Path Badges & Labels Layer -->
+    <g id="inst-badge-labels-layer">
+        <!-- Valid? YES / NO -->
+        <rect class="badge-rect badge-no" x="558" y="236" width="28" height="18" rx="4" />
+        <text class="badge-text no" x="572" y="245">NO</text>
+
+        <rect class="badge-rect badge-yes" x="666" y="304" width="28" height="18" rx="4" />
+        <text class="badge-text yes" x="680" y="313">YES</text>
+
+        <rect class="badge-rect badge-no" x="331" y="186" width="38" height="18" rx="4" />
+        <text class="badge-text no" x="350" y="195">Retry</text>
+
+        <!-- File Uploaded? YES / NO -->
+        <rect class="badge-rect badge-no" x="566" y="1171" width="28" height="18" rx="4" />
+        <text class="badge-text no" x="580" y="1180">NO</text>
+
+        <rect class="badge-rect badge-yes" x="666" y="1219" width="28" height="18" rx="4" />
+        <text class="badge-text yes" x="680" y="1228">YES</text>
+
+        <rect class="badge-rect badge-no" x="331" y="1126" width="38" height="18" rx="4" />
+        <text class="badge-text no" x="350" y="1135">Retry</text>
+
+        <!-- Interactive Branch Selection Hotspots from Choose Activity -->
+        <g id="badge-inst-assignments" class="clickable-badge" onclick="selectWorkflow('inst-assignments')">
+            <rect class="badge-rect" x="290" y="674" width="160" height="32" rx="16" />
+            <text class="badge-text branch" x="370" y="690">Assignments ↙</text>
+        </g>
+        <g id="badge-inst-materials" class="clickable-badge" onclick="selectWorkflow('inst-materials')">
+            <rect class="badge-rect" x="600" y="736" width="160" height="28" rx="14" />
+            <text class="badge-text branch" x="680" y="750">Learning Materials ↓</text>
+        </g>
+        <g id="badge-inst-quizzes" class="clickable-badge" onclick="selectWorkflow('inst-quizzes')">
+            <rect class="badge-rect" x="1000" y="674" width="160" height="32" rx="16" />
+            <text class="badge-text branch" x="1080" y="690">↘ Quizzes / Exams</text>
+        </g>
+    </g>
+
+    <!-- Nodes Layer -->
+    <g id="inst-nodes-layer">
+        <!-- START (Oval) -->
+        <g id="node-inst-start" class="node-group">
+            <rect class="node-shape start-shape" x="610" y="28" width="140" height="44" rx="22" ry="22" />
+            <text class="node-text" x="680" y="50">START</text>
+        </g>
+
+        <!-- Login (Rect) -->
+        <g id="node-inst-login" class="node-group">
+            <rect class="node-shape" x="595" y="117" width="170" height="46" rx="8" ry="8" />
+            <text class="node-text" x="680" y="140">Login</text>
+        </g>
+
+        <!-- Valid? (Diamond - Orange Decision) -->
+        <g id="node-inst-valid" class="node-group">
+            <polygon class="node-shape diamond-shape" points="680,210 740,245 680,280 620,245" />
+            <text class="node-text" x="680" y="245">Valid?</text>
+        </g>
+
+        <!-- Login Error (Rect - Red Error) -->
+        <g id="node-inst-error" class="node-group error-node">
+            <rect class="node-shape error-shape" x="375" y="222" width="150" height="46" rx="8" ry="8" />
+            <text class="node-text" x="450" y="245">Login Error</text>
+        </g>
+
+        <!-- Instructor Dashboard (Rect) -->
+        <g id="node-inst-dashboard" class="node-group">
+            <rect class="node-shape" x="580" y="346" width="200" height="48" rx="8" ry="8" />
+            <text class="node-text" x="680" y="370">Instructor Dashboard</text>
+        </g>
+
+        <!-- My Courses (Rect) -->
+        <g id="node-inst-courses" class="node-group">
+            <rect class="node-shape" x="590" y="457" width="180" height="46" rx="8" ry="8" />
+            <text class="node-text" x="680" y="480">My Courses</text>
+        </g>
+
+        <!-- Course Overview (Rect) -->
+        <g id="node-inst-overview" class="node-group">
+            <rect class="node-shape" x="590" y="557" width="180" height="46" rx="8" ry="8" />
+            <text class="node-text" x="680" y="580">Course Overview</text>
+        </g>
+
+        <!-- Choose Activity (Diamond - Orange Decision) -->
+        <g id="node-inst-choose" class="node-group">
+            <polygon class="node-shape diamond-shape" points="680,655 745,690 680,725 615,690" />
+            <text class="node-text" x="680" y="690">Choose Activity</text>
+        </g>
+
+        <!-- BRANCH 1: ASSIGNMENTS (X=170 - Pristine Clearance from Login Error & Retry Paths) -->
+        <g id="node-inst-asgn" class="node-group">
+            <rect class="node-shape" x="85" y="777" width="170" height="46" rx="8" ry="8" />
+            <text class="node-text" x="170" y="800">Assignment</text>
+        </g>
+        <g id="node-inst-asgn-create" class="node-group">
+            <rect class="node-shape" x="80" y="877" width="180" height="46" rx="8" ry="8" />
+            <text class="node-text" x="170" y="900">Create / Edit Assignment</text>
+        </g>
+        <g id="node-inst-asgn-instr" class="node-group">
+            <rect class="node-shape" x="80" y="977" width="180" height="46" rx="8" ry="8" />
+            <text class="node-text" x="170" y="1000">Enter Instructions</text>
+        </g>
+        <g id="node-inst-asgn-due" class="node-group">
+            <rect class="node-shape" x="85" y="1077" width="170" height="46" rx="8" ry="8" />
+            <text class="node-text" x="170" y="1100">Set Due Date</text>
+        </g>
+        <g id="node-inst-asgn-publish" class="node-group">
+            <rect class="node-shape" x="80" y="1177" width="180" height="46" rx="8" ry="8" />
+            <text class="node-text" x="170" y="1200">Publish Assignment</text>
+        </g>
+        <g id="node-inst-asgn-avail" class="node-group">
+            <rect class="node-shape success-shape" x="70" y="1277" width="200" height="46" rx="23" ry="23" />
+            <text class="node-text text-success" x="170" y="1300">Assignment Available to Students</text>
+        </g>
+
+        <!-- BRANCH 2: LEARNING MATERIALS (X=680) -->
+        <g id="node-inst-mat" class="node-group">
+            <rect class="node-shape" x="590" y="767" width="180" height="46" rx="8" ry="8" />
+            <text class="node-text" x="680" y="790">Learning Materials</text>
+        </g>
+        <g id="node-inst-mat-type" class="node-group">
+            <rect class="node-shape" x="585" y="867" width="190" height="46" rx="8" ry="8" />
+            <text class="node-text" x="680" y="890">Choose Material Type</text>
+        </g>
+        <g id="node-inst-mat-res" class="node-group">
+            <!-- Flowchart Document Symbol -->
+            <path class="node-shape doc-shape" d="M 570 967 H 790 V 1005 Q 735 1018 680 1005 Q 625 992 570 1005 Z" />
+            <text class="node-text" x="680" y="988">Lecture / Tutorial / Resource</text>
+        </g>
+        <g id="node-inst-mat-upload" class="node-group">
+            <rect class="node-shape" x="590" y="1067" width="180" height="46" rx="8" ry="8" />
+            <text class="node-text" x="680" y="1090">Upload Material</text>
+        </g>
+        <g id="node-inst-mat-check" class="node-group">
+            <polygon class="node-shape diamond-shape" points="680,1150 735,1180 680,1210 625,1180" />
+            <text class="node-text" x="680" y="1180">File Uploaded?</text>
+        </g>
+        <g id="node-inst-mat-err" class="node-group error-node">
+            <rect class="node-shape error-shape" x="385" y="1157" width="150" height="46" rx="8" ry="8" />
+            <text class="node-text" x="460" y="1180">Upload Error</text>
+        </g>
+        <g id="node-inst-mat-publish" class="node-group">
+            <rect class="node-shape" x="590" y="1247" width="180" height="46" rx="8" ry="8" />
+            <text class="node-text" x="680" y="1270">Publish Material</text>
+        </g>
+        <g id="node-inst-mat-avail" class="node-group">
+            <rect class="node-shape success-shape" x="565" y="1337" width="230" height="46" rx="23" ry="23" />
+            <text class="node-text text-success" x="680" y="1360">Material Available to Students</text>
+        </g>
+
+        <!-- BRANCH 3: QUIZZES / EXAMS (X=1080) -->
+        <g id="node-inst-quiz" class="node-group">
+            <rect class="node-shape" x="990" y="767" width="180" height="46" rx="8" ry="8" />
+            <text class="node-text" x="1080" y="790">Quizzes / Exams</text>
+        </g>
+        <g id="node-inst-quiz-create" class="node-group">
+            <rect class="node-shape" x="990" y="867" width="180" height="46" rx="8" ry="8" />
+            <text class="node-text" x="1080" y="890">Create / Edit Quiz</text>
+        </g>
+        <g id="node-inst-quiz-quest" class="node-group">
+            <rect class="node-shape" x="990" y="967" width="180" height="46" rx="8" ry="8" />
+            <text class="node-text" x="1080" y="990">Add Questions</text>
+        </g>
+        <g id="node-inst-quiz-time" class="node-group">
+            <rect class="node-shape" x="990" y="1067" width="180" height="46" rx="8" ry="8" />
+            <text class="node-text" x="1080" y="1090">Set Date / Time</text>
+        </g>
+        <g id="node-inst-quiz-publish" class="node-group">
+            <rect class="node-shape" x="990" y="1167" width="180" height="46" rx="8" ry="8" />
+            <text class="node-text" x="1080" y="1190">Publish Quiz</text>
+        </g>
+        <g id="node-inst-quiz-avail" class="node-group">
+            <rect class="node-shape success-shape" x="975" y="1267" width="210" height="46" rx="23" ry="23" />
+            <text class="node-text text-success" x="1080" y="1290">Quiz Available to Students</text>
+        </g>
+    </g>
+
+    <!-- Animated Physical Token Layer -->
+    <g id="inst-tokens-layer">
+        <g id="workflow-token-inst" class="workflow-token" transform="translate(680, 50)">
+            <circle class="token-glow" cx="0" cy="0" r="16" />
+            <circle class="token-pulse" cx="0" cy="0" r="10" />
+            <circle class="token-core" cx="0" cy="0" r="6" />
+        </g>
+    </g>
+</svg>
+
+            <svg class="flowchart-svg hidden-flowchart" id="svg-admin" viewBox="0 0 1360 1440" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <!-- Arrowhead Markers directly inside this SVG -->
+        <marker id="arrow-default-admin" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="#3b475e" />
+        </marker>
+        <marker id="arrow-blue-admin" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="#3a86ff" />
+        </marker>
+        <marker id="arrow-green-admin" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="#06d6a0" />
+        </marker>
+        <marker id="arrow-red-admin" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="#ff4a4a" />
+        </marker>
+    </defs>
+
+    <!-- Flow Connectors Layer (Thin lines, strictly NO fill) -->
+    <g id="admin-connectors-layer">
+        <!-- Central Spine -->
+        <path id="path-admin-start-login" class="conn-line" fill="none" d="M 680 72 V 117" marker-end="url(#arrow-default-admin)" />
+        <path id="path-admin-login-valid" class="conn-line" fill="none" d="M 680 163 V 210" marker-end="url(#arrow-default-admin)" />
+
+        <!-- Login Error Loop -->
+        <path id="path-admin-valid-error" class="conn-line error-path" fill="none" d="M 620 245 H 525" marker-end="url(#arrow-red-admin)" />
+        <path id="path-admin-error-login" class="conn-line error-path" fill="none" d="M 375 245 H 340 V 140 H 595" marker-end="url(#arrow-red-admin)" />
+
+        <!-- Spine Continued to Dashboard & Choose Area -->
+        <path id="path-admin-valid-dash" class="conn-line" fill="none" d="M 680 280 V 345" marker-end="url(#arrow-default-admin)" />
+        <path id="path-admin-dash-choose" class="conn-line" fill="none" d="M 680 395 V 470" marker-end="url(#arrow-default-admin)" />
+
+        <!-- Choose Management Area Branches -->
+        <path id="path-admin-choose-users" class="conn-line" fill="none" d="M 595 505 H 200 V 591" marker-end="url(#arrow-default-admin)" />
+        <path id="path-admin-choose-courses" class="conn-line" fill="none" d="M 680 540 V 591" marker-end="url(#arrow-default-admin)" />
+        <path id="path-admin-choose-enroll" class="conn-line" fill="none" d="M 765 505 H 1040 V 591" marker-end="url(#arrow-default-admin)" />
+
+        <!-- Branch 1: User Management (Left Column: X = 200) -->
+        <path id="path-admin-user-view" class="conn-line" fill="none" d="M 200 639 V 681" marker-end="url(#arrow-default-admin)" />
+        <path id="path-admin-user-edit" class="conn-line" fill="none" d="M 200 729 V 771" marker-end="url(#arrow-default-admin)" />
+        <path id="path-admin-user-role" class="conn-line" fill="none" d="M 200 819 V 861" marker-end="url(#arrow-default-admin)" />
+        <path id="path-admin-user-save" class="conn-line" fill="none" d="M 200 919 V 961" marker-end="url(#arrow-default-admin)" />
+        <path id="path-admin-user-updated" class="conn-line" fill="none" d="M 200 1009 V 1051" marker-end="url(#arrow-green-admin)" />
+
+        <!-- Branch 2: Course Management (Center Column: X = 680) -->
+        <path id="path-admin-course-view" class="conn-line" fill="none" d="M 680 639 V 681" marker-end="url(#arrow-default-admin)" />
+        <path id="path-admin-course-edit" class="conn-line" fill="none" d="M 680 729 V 771" marker-end="url(#arrow-default-admin)" />
+        <path id="path-admin-course-inst" class="conn-line" fill="none" d="M 680 819 V 861" marker-end="url(#arrow-default-admin)" />
+        <path id="path-admin-course-details" class="conn-line" fill="none" d="M 680 909 V 951" marker-end="url(#arrow-default-admin)" />
+        <path id="path-admin-course-publish" class="conn-line" fill="none" d="M 680 999 V 1041" marker-end="url(#arrow-default-admin)" />
+        <path id="path-admin-course-updated" class="conn-line" fill="none" d="M 680 1089 V 1131" marker-end="url(#arrow-green-admin)" />
+
+        <!-- Branch 3: Enrollment (Right Column: X = 1040) -->
+        <path id="path-admin-enroll-student" class="conn-line" fill="none" d="M 1040 639 V 681" marker-end="url(#arrow-default-admin)" />
+        <path id="path-admin-enroll-course" class="conn-line" fill="none" d="M 1040 729 V 771" marker-end="url(#arrow-default-admin)" />
+        <path id="path-admin-enroll-check" class="conn-line" fill="none" d="M 1040 819 V 861" marker-end="url(#arrow-default-admin)" />
+        <path id="path-admin-enroll-decision" class="conn-line" fill="none" d="M 1040 919 V 960" marker-end="url(#arrow-default-admin)" />
+
+        <!-- Enrollment Decision Paths -->
+        <!-- YES Path: Green -->
+        <path id="path-admin-enroll-yes" class="conn-line" fill="none" d="M 1040 1040 V 1091" marker-end="url(#arrow-green-admin)" />
+        <path id="path-admin-enroll-success" class="conn-line" fill="none" d="M 1040 1139 V 1181" marker-end="url(#arrow-green-admin)" />
+
+        <!-- NO Path: Red Decision Loop -->
+        <path id="path-admin-enroll-no" class="conn-line error-path" fill="none" d="M 1120 1000 H 1170" marker-end="url(#arrow-red-admin)" />
+        <path id="path-admin-enroll-show-reason" class="conn-line error-path" fill="none" d="M 1240 977 V 913" marker-end="url(#arrow-red-admin)" />
+        <path id="path-admin-enroll-return" class="conn-line error-path" fill="none" d="M 1240 867 V 705 H 1130" marker-end="url(#arrow-red-admin)" />
+    </g>
+
+    <!-- Path Labels & Badges Layer -->
+    <g id="admin-badges-layer">
+        <!-- Spine Badges -->
+        <g id="badge-admin-error">
+            <rect class="badge-rect badge-no" x="555" y="235" width="30" height="20" />
+            <text class="badge-text no" x="570" y="245">NO</text>
+        </g>
+        <g id="badge-admin-valid-yes">
+            <rect class="badge-rect badge-yes" x="682" y="295" width="34" height="20" />
+            <text class="badge-text yes" x="699" y="305">YES</text>
+        </g>
+        <text class="node-text text-error" x="340" y="190" text-anchor="middle" font-size="11">Retry</text>
+
+        <!-- Choose Management Area Branch Selectors -->
+        <g id="badge-admin-users" class="clickable-badge selected-branch" onclick="selectWorkflow('admin-users')" transform="translate(370, 495)">
+            <rect class="badge-rect" x="-45" y="-12" width="90" height="24" rx="12" />
+            <text class="badge-text branch" x="0" y="0">Users</text>
+        </g>
+        <g id="badge-admin-courses" class="clickable-badge" onclick="selectWorkflow('admin-courses')" transform="translate(680, 562)">
+            <rect class="badge-rect" x="-48" y="-12" width="96" height="24" rx="12" />
+            <text class="badge-text branch" x="0" y="0">Courses</text>
+        </g>
+        <g id="badge-admin-enrollment" class="clickable-badge" onclick="selectWorkflow('admin-enrollment')" transform="translate(900, 495)">
+            <rect class="badge-rect" x="-54" y="-12" width="108" height="24" rx="12" />
+            <text class="badge-text branch" x="0" y="0">Enrollment</text>
+        </g>
+
+        <!-- Enrollment Decision Badges -->
+        <g id="badge-admin-enroll-yes" class="clickable-badge" onclick="selectWorkflow('admin-enrollment')">
+            <rect class="badge-rect badge-yes" x="1042" y="1052" width="36" height="20" />
+            <text class="badge-text yes" x="1060" y="1062">YES</text>
+        </g>
+        <g id="badge-admin-enroll-no" class="clickable-badge" onclick="selectWorkflow('admin-enrollment-rejected')">
+            <rect class="badge-rect badge-no" x="1126" y="988" width="32" height="20" />
+            <text class="badge-text no" x="1142" y="998">NO</text>
+        </g>
+        <g id="badge-admin-enroll-return-lbl">
+            <rect class="badge-rect badge-no" x="1165" y="695" width="60" height="18" rx="4" />
+            <text class="badge-text no" x="1195" y="704" font-size="10">Return</text>
+        </g>
+    </g>
+
+    <!-- Flowchart Nodes Layer -->
+    <g id="admin-nodes-layer">
+        <!-- Central Spine Nodes -->
+        <g id="node-admin-start" class="node-group">
+            <rect class="node-shape start-shape" x="620" y="28" width="120" height="44" rx="22" />
+            <text class="node-text text-success" x="680" y="50">START</text>
+        </g>
+
+        <g id="node-admin-login" class="node-group">
+            <rect class="node-shape" x="595" y="117" width="170" height="46" rx="8" />
+            <text class="node-text" x="680" y="140">Login</text>
+        </g>
+
+        <g id="node-admin-valid" class="node-group">
+            <polygon class="node-shape diamond-shape" points="680,210 740,245 680,280 620,245" />
+            <text class="node-text" x="680" y="245">Valid?</text>
+        </g>
+
+        <g id="node-admin-error" class="node-group">
+            <rect class="node-shape error-shape" x="375" y="222" width="150" height="46" rx="8" />
+            <text class="node-text text-error" x="450" y="245">Login Error</text>
+        </g>
+
+        <g id="node-admin-dashboard" class="node-group">
+            <rect class="node-shape" x="585" y="345" width="190" height="50" rx="8" />
+            <text class="node-text" x="680" y="370">Admin Dashboard</text>
+        </g>
+
+        <g id="node-admin-choose" class="node-group">
+            <polygon class="node-shape diamond-shape" points="680,470 765,505 680,540 595,505" />
+            <text class="node-text" x="680" y="498" font-size="11.5">Choose</text>
+            <text class="node-text" x="680" y="513" font-size="11.5">Management Area</text>
+        </g>
+
+        <!-- Branch 1: User Management (X = 200) -->
+        <g id="node-admin-user-mgmt" class="node-group">
+            <rect class="node-shape" x="115" y="591" width="170" height="48" rx="8" />
+            <text class="node-text" x="200" y="615">User Management</text>
+        </g>
+
+        <g id="node-admin-user-view" class="node-group">
+            <rect class="node-shape" x="120" y="681" width="160" height="48" rx="8" />
+            <text class="node-text" x="200" y="705">View Users</text>
+        </g>
+
+        <g id="node-admin-user-edit" class="node-group">
+            <rect class="node-shape" x="110" y="771" width="180" height="48" rx="8" />
+            <text class="node-text" x="200" y="795">Create / Edit User</text>
+        </g>
+
+        <g id="node-admin-user-role" class="node-group">
+            <rect class="node-shape" x="100" y="861" width="200" height="58" rx="8" />
+            <text class="node-text" x="200" y="881">Assign Role</text>
+            <text class="node-text" x="200" y="901" font-size="10.5" fill="#94a3b8">Student • Inst • Admin</text>
+        </g>
+
+        <g id="node-admin-user-save" class="node-group">
+            <rect class="node-shape" x="120" y="961" width="160" height="48" rx="8" />
+            <text class="node-text" x="200" y="985">Save User</text>
+        </g>
+
+        <g id="node-admin-user-updated" class="node-group">
+            <rect class="node-shape success-shape" x="115" y="1051" width="170" height="48" rx="24" />
+            <text class="node-text text-success" x="200" y="1075">User Updated</text>
+        </g>
+
+        <!-- Branch 2: Course Management (X = 680) -->
+        <g id="node-admin-course-mgmt" class="node-group">
+            <rect class="node-shape" x="585" y="591" width="190" height="48" rx="8" />
+            <text class="node-text" x="680" y="615">Course Management</text>
+        </g>
+
+        <g id="node-admin-course-view" class="node-group">
+            <rect class="node-shape" x="600" y="681" width="160" height="48" rx="8" />
+            <text class="node-text" x="680" y="705">View Courses</text>
+        </g>
+
+        <g id="node-admin-course-edit" class="node-group">
+            <rect class="node-shape" x="585" y="771" width="190" height="48" rx="8" />
+            <text class="node-text" x="680" y="795">Create / Edit Course</text>
+        </g>
+
+        <g id="node-admin-course-inst" class="node-group">
+            <rect class="node-shape" x="595" y="861" width="170" height="48" rx="8" />
+            <text class="node-text" x="680" y="885">Assign Instructor</text>
+        </g>
+
+        <g id="node-admin-course-details" class="node-group">
+            <rect class="node-shape" x="590" y="951" width="180" height="48" rx="8" />
+            <text class="node-text" x="680" y="975">Set Course Details</text>
+        </g>
+
+        <g id="node-admin-course-publish" class="node-group">
+            <rect class="node-shape" x="580" y="1041" width="200" height="48" rx="8" />
+            <text class="node-text" x="680" y="1065">Save / Publish Course</text>
+        </g>
+
+        <g id="node-admin-course-updated" class="node-group">
+            <rect class="node-shape success-shape" x="590" y="1131" width="180" height="48" rx="24" />
+            <text class="node-text text-success" x="680" y="1155">Course Updated</text>
+        </g>
+
+        <!-- Branch 3: Enrollment (X = 1040) -->
+        <g id="node-admin-enroll-mgmt" class="node-group">
+            <rect class="node-shape" x="955" y="591" width="170" height="48" rx="8" />
+            <text class="node-text" x="1040" y="615">Enrollment</text>
+        </g>
+
+        <g id="node-admin-enroll-student" class="node-group">
+            <rect class="node-shape" x="950" y="681" width="180" height="48" rx="8" />
+            <text class="node-text" x="1040" y="705">Select Student</text>
+        </g>
+
+        <g id="node-admin-enroll-course" class="node-group">
+            <rect class="node-shape" x="955" y="771" width="170" height="48" rx="8" />
+            <text class="node-text" x="1040" y="795">Select Course</text>
+        </g>
+
+        <g id="node-admin-enroll-check" class="node-group">
+            <rect class="node-shape" x="930" y="861" width="220" height="58" rx="8" />
+            <text class="node-text" x="1040" y="880">Check Student Eligibility</text>
+            <text class="node-text" x="1040" y="900" font-size="10" fill="#94a3b8">Active • Not Enrolled • Requirements</text>
+        </g>
+
+        <g id="node-admin-enroll-decision" class="node-group">
+            <polygon class="node-shape diamond-shape" points="1040,960 1120,1000 1040,1040 960,1000" />
+            <text class="node-text" x="1040" y="993" font-size="12">Eligible</text>
+            <text class="node-text" x="1040" y="1009" font-size="12">to Enroll?</text>
+        </g>
+
+        <!-- YES Path: Confirm & Success -->
+        <g id="node-admin-enroll-confirm" class="node-group">
+            <rect class="node-shape" x="945" y="1091" width="190" height="48" rx="8" />
+            <text class="node-text" x="1040" y="1115">Confirm Enrollment</text>
+        </g>
+
+        <g id="node-admin-enroll-success" class="node-group">
+            <rect class="node-shape success-shape" x="935" y="1181" width="210" height="48" rx="24" />
+            <text class="node-text text-success" x="1040" y="1205">Enrollment Successful</text>
+        </g>
+
+        <!-- NO Path: Enrollment Rejected & Show Reason -->
+        <g id="node-admin-enroll-rejected" class="node-group">
+            <rect class="node-shape error-shape" x="1170" y="977" width="140" height="46" rx="8" />
+            <text class="node-text text-error" x="1240" y="994" font-size="11.5">Enrollment</text>
+            <text class="node-text text-error" x="1240" y="1008" font-size="11.5">Rejected</text>
+        </g>
+
+        <g id="node-admin-enroll-reason" class="node-group">
+            <rect class="node-shape error-shape" x="1175" y="867" width="130" height="46" rx="8" />
+            <text class="node-text text-error" x="1240" y="890">Show Reason</text>
+        </g>
+    </g>
+
+    <!-- Animated Workflow Token for Admin -->
+    <g id="workflow-token-admin" class="workflow-token" transform="translate(680, 50)">
+        <circle class="token-glow" r="16" />
+        <circle class="token-pulse-ring" r="8" />
+        <circle class="token-core" r="6" />
+    </g>
+</svg>
+        </div>
+    </main>
+</div>
+
+<script>
+    /**
+     * EDUFLEX DUAL-ROLE WORKFLOW EXECUTION ENGINE (STUDENT & INSTRUCTOR)
+     * Continuous Physical Vector Interpolation via requestAnimationFrame and SVG getPointAtLength()
+     */
+
+    // Sequential Node Coordinates & Entry/Center/Exit Points for Zero-Discontinuity Transit
+    const nodeRegistry = {
+        // Student Nodes (20)
+        'node-start': { name: 'START', center: { x: 680, y: 50 }, exit: { x: 680, y: 72 } },
+        'node-login': { name: 'Login / Register', entry: { x: 680, y: 117 }, entryRetry: { x: 595, y: 140 }, center: { x: 680, y: 140 }, exit: { x: 680, y: 163 } },
+        'node-valid': { name: 'Valid?', entry: { x: 680, y: 210 }, center: { x: 680, y: 245 }, exit: { x: 680, y: 280 }, exitNo: { x: 620, y: 245 } },
+        'node-error': { name: 'Login Error', entry: { x: 525, y: 245 }, center: { x: 450, y: 245 }, exit: { x: 375, y: 245 } },
+        'node-dashboard': { name: 'Student Dashboard', entry: { x: 680, y: 346 }, center: { x: 680, y: 370 }, exit: { x: 680, y: 394 } },
+        'node-courses': { name: 'My Courses', entry: { x: 680, y: 457 }, center: { x: 680, y: 480 }, exit: { x: 680, y: 503 } },
+        'node-overview': { name: 'Course Overview', entry: { x: 680, y: 557 }, center: { x: 680, y: 580 }, exit: { x: 680, y: 603 } },
+        'node-activity': { entry: { x: 680, y: 655 }, center: { x: 680, y: 690 }, exitAssignment: { x: 615, y: 690 }, exitMaterials: { x: 680, y: 725 }, exitQuiz: { x: 745, y: 690 }, name: 'Activity?' },
+        'node-assign-details': { name: 'Assignment Details', entry: { x: 250, y: 777 }, center: { x: 250, y: 800 }, exit: { x: 250, y: 823 } },
+        'node-upload-file': { name: 'Upload File', entry: { x: 250, y: 867 }, center: { x: 250, y: 890 }, exit: { x: 250, y: 913 } },
+        'node-uploaded': { name: 'Uploaded?', entry: { x: 250, y: 965 }, center: { x: 250, y: 1000 }, exit: { x: 250, y: 1035 } },
+        'node-submit-assign': { name: 'Submit Assignment', entry: { x: 250, y: 1100 }, center: { x: 250, y: 1125 }, exit: { x: 250, y: 1146 } },
+        'node-sub-confirmed': { name: 'Submission Confirmed', entry: { x: 250, y: 1200 }, center: { x: 250, y: 1225 }, exit: { x: 250, y: 1246 } },
+        'node-grade-feedback': { name: 'Grade & Feedback', entry: { x: 250, y: 1306 }, center: { x: 250, y: 1330 }, exit: { x: 250, y: 1330 } },
+        'node-materials': { name: 'Learning Materials', entry: { x: 680, y: 777 }, center: { x: 680, y: 800 }, exit: { x: 680, y: 823 } },
+        'node-download': { name: 'Open / Download', entry: { x: 680, y: 867 }, center: { x: 680, y: 890 }, exit: { x: 680, y: 890 } },
+        'node-quiz-details': { name: 'Quiz / Exam Details', entry: { x: 1070, y: 777 }, center: { x: 1070, y: 800 }, exit: { x: 1070, y: 823 } },
+        'node-available': { name: 'Available?', entry: { x: 1070, y: 875 }, center: { x: 1070, y: 910 }, exit: { x: 1070, y: 945 } },
+        'node-start-quiz': { name: 'Start Quiz / Exam', entry: { x: 1070, y: 1020 }, center: { x: 1070, y: 1043 }, exit: { x: 1070, y: 1066 } },
+        'node-quiz-result': { name: 'Quiz Result', entry: { x: 1070, y: 1121 }, center: { x: 1070, y: 1145 }, exit: { x: 1070, y: 1145 } },
+
+        // Simplified Instructor Nodes (28)
+        // Central Spine (X = 680)
+        'node-inst-start': { name: 'START', center: { x: 680, y: 50 }, exit: { x: 680, y: 72 } },
+        'node-inst-login': { name: 'Login', entry: { x: 680, y: 117 }, entryRetry: { x: 595, y: 140 }, center: { x: 680, y: 140 }, exit: { x: 680, y: 163 } },
+        'node-inst-valid': { name: 'Valid?', entry: { x: 680, y: 210 }, center: { x: 680, y: 245 }, exit: { x: 680, y: 280 }, exitNo: { x: 620, y: 245 } },
+        'node-inst-error': { name: 'Login Error', entry: { x: 525, y: 245 }, center: { x: 450, y: 245 }, exit: { x: 375, y: 245 } },
+        'node-inst-dashboard': { name: 'Instructor Dashboard', entry: { x: 680, y: 346 }, center: { x: 680, y: 370 }, exit: { x: 680, y: 394 } },
+        'node-inst-courses': { name: 'My Courses', entry: { x: 680, y: 457 }, center: { x: 680, y: 480 }, exit: { x: 680, y: 503 } },
+        'node-inst-overview': { name: 'Course Overview', entry: { x: 680, y: 557 }, center: { x: 680, y: 580 }, exit: { x: 680, y: 603 } },
+        'node-inst-choose': { name: 'Choose Activity', entry: { x: 680, y: 655 }, center: { x: 680, y: 690 }, exitLeft: { x: 615, y: 690 }, exitCenter: { x: 680, y: 725 }, exitRight: { x: 745, y: 690 } },
+
+        // Branch 1: Assignments (X = 170 - Pristine Clearance Corridor)
+        'node-inst-asgn': { name: 'Assignment', entry: { x: 170, y: 777 }, center: { x: 170, y: 800 }, exit: { x: 170, y: 823 } },
+        'node-inst-asgn-create': { name: 'Create / Edit Assignment', entry: { x: 170, y: 877 }, center: { x: 170, y: 900 }, exit: { x: 170, y: 923 } },
+        'node-inst-asgn-instr': { name: 'Enter Instructions', entry: { x: 170, y: 977 }, center: { x: 170, y: 1000 }, exit: { x: 170, y: 1023 } },
+        'node-inst-asgn-due': { name: 'Set Due Date', entry: { x: 170, y: 1077 }, center: { x: 170, y: 1100 }, exit: { x: 170, y: 1123 } },
+        'node-inst-asgn-publish': { name: 'Publish Assignment', entry: { x: 170, y: 1177 }, center: { x: 170, y: 1200 }, exit: { x: 170, y: 1223 } },
+        'node-inst-asgn-avail': { name: 'Assignment Available to Students', entry: { x: 170, y: 1277 }, center: { x: 170, y: 1300 }, exit: { x: 170, y: 1323 } },
+
+        // Branch 2: Learning Materials (X = 680)
+        'node-inst-mat': { name: 'Learning Materials', entry: { x: 680, y: 767 }, center: { x: 680, y: 790 }, exit: { x: 680, y: 813 } },
+        'node-inst-mat-type': { name: 'Choose Material Type', entry: { x: 680, y: 867 }, center: { x: 680, y: 890 }, exit: { x: 680, y: 913 } },
+        'node-inst-mat-res': { name: 'Lecture / Tutorial / Resource', entry: { x: 680, y: 967 }, center: { x: 680, y: 990 }, exit: { x: 680, y: 1013 } },
+        'node-inst-mat-upload': { name: 'Upload Material', entry: { x: 680, y: 1067 }, entryRetry: { x: 590, y: 1090 }, center: { x: 680, y: 1090 }, exit: { x: 680, y: 1113 } },
+        'node-inst-mat-check': { name: 'File Uploaded?', entry: { x: 680, y: 1150 }, center: { x: 680, y: 1180 }, exit: { x: 680, y: 1210 }, exitNo: { x: 625, y: 1180 } },
+        'node-inst-mat-err': { name: 'Upload Error', entry: { x: 535, y: 1180 }, center: { x: 460, y: 1180 }, exit: { x: 385, y: 1180 } },
+        'node-inst-mat-publish': { name: 'Publish Material', entry: { x: 680, y: 1247 }, center: { x: 680, y: 1270 }, exit: { x: 680, y: 1293 } },
+        'node-inst-mat-avail': { name: 'Material Available to Students', entry: { x: 680, y: 1337 }, center: { x: 680, y: 1360 }, exit: { x: 680, y: 1383 } },
+
+        // Branch 3: Quizzes / Exams (X = 1080)
+        'node-inst-quiz': { name: 'Quizzes / Exams', entry: { x: 1080, y: 767 }, center: { x: 1080, y: 790 }, exit: { x: 1080, y: 813 } },
+        'node-inst-quiz-create': { name: 'Create / Edit Quiz', entry: { x: 1080, y: 867 }, center: { x: 1080, y: 890 }, exit: { x: 1080, y: 913 } },
+        'node-inst-quiz-quest': { name: 'Add Questions', entry: { x: 1080, y: 967 }, center: { x: 1080, y: 990 }, exit: { x: 1080, y: 1013 } },
+        'node-inst-quiz-time': { name: 'Set Date / Time', entry: { x: 1080, y: 1067 }, center: { x: 1080, y: 1090 }, exit: { x: 1080, y: 1113 } },
+        'node-inst-quiz-publish': { name: 'Publish Quiz', entry: { x: 1080, y: 1167 }, center: { x: 1080, y: 1190 }, exit: { x: 1080, y: 1213 } },
+        'node-inst-quiz-avail': { name: 'Quiz Available to Students', entry: { x: 1080, y: 1267 }, center: { x: 1080, y: 1290 }, exit: { x: 1080, y: 1313 } },
+
+        // ==========================================
+        // ADMIN WORKFLOW NODES
+        // ==========================================
+        // Central Spine
+        'node-admin-start': { name: 'START', entry: { x: 680, y: 28 }, center: { x: 680, y: 50 }, exit: { x: 680, y: 72 } },
+        'node-admin-login': { name: 'Login', entry: { x: 680, y: 117 }, entryRetry: { x: 595, y: 140 }, center: { x: 680, y: 140 }, exit: { x: 680, y: 163 } },
+        'node-admin-valid': { name: 'Valid?', entry: { x: 680, y: 210 }, center: { x: 680, y: 245 }, exit: { x: 680, y: 280 }, exitNo: { x: 620, y: 245 } },
+        'node-admin-error': { name: 'Login Error', entry: { x: 525, y: 245 }, center: { x: 450, y: 245 }, exit: { x: 375, y: 245 } },
+        'node-admin-dashboard': { name: 'Admin Dashboard', entry: { x: 680, y: 345 }, center: { x: 680, y: 370 }, exit: { x: 680, y: 395 } },
+        'node-admin-choose': { name: 'Choose Management Area', entry: { x: 680, y: 470 }, center: { x: 680, y: 505 }, exit: { x: 680, y: 540 }, exitUsers: { x: 595, y: 505 }, exitCourses: { x: 680, y: 540 }, exitEnroll: { x: 765, y: 505 } },
+
+        // Branch 1: User Management (X = 200)
+        'node-admin-user-mgmt': { name: 'User Management', entry: { x: 200, y: 591 }, center: { x: 200, y: 615 }, exit: { x: 200, y: 639 } },
+        'node-admin-user-view': { name: 'View Users', entry: { x: 200, y: 681 }, center: { x: 200, y: 705 }, exit: { x: 200, y: 729 } },
+        'node-admin-user-edit': { name: 'Create / Edit User', entry: { x: 200, y: 771 }, center: { x: 200, y: 795 }, exit: { x: 200, y: 819 } },
+        'node-admin-user-role': { name: 'Assign Role', entry: { x: 200, y: 861 }, center: { x: 200, y: 890 }, exit: { x: 200, y: 919 } },
+        'node-admin-user-save': { name: 'Save User', entry: { x: 200, y: 961 }, center: { x: 200, y: 985 }, exit: { x: 200, y: 1009 } },
+        'node-admin-user-updated': { name: 'User Updated', entry: { x: 200, y: 1051 }, center: { x: 200, y: 1075 }, exit: { x: 200, y: 1099 } },
+
+        // Branch 2: Course Management (X = 680)
+        'node-admin-course-mgmt': { name: 'Course Management', entry: { x: 680, y: 591 }, center: { x: 680, y: 615 }, exit: { x: 680, y: 639 } },
+        'node-admin-course-view': { name: 'View Courses', entry: { x: 680, y: 681 }, center: { x: 680, y: 705 }, exit: { x: 680, y: 729 } },
+        'node-admin-course-edit': { name: 'Create / Edit Course', entry: { x: 680, y: 771 }, center: { x: 680, y: 795 }, exit: { x: 680, y: 819 } },
+        'node-admin-course-inst': { name: 'Assign Instructor', entry: { x: 680, y: 861 }, center: { x: 680, y: 885 }, exit: { x: 680, y: 909 } },
+        'node-admin-course-details': { name: 'Set Course Details', entry: { x: 680, y: 951 }, center: { x: 680, y: 975 }, exit: { x: 680, y: 999 } },
+        'node-admin-course-publish': { name: 'Save / Publish Course', entry: { x: 680, y: 1041 }, center: { x: 680, y: 1065 }, exit: { x: 680, y: 1089 } },
+        'node-admin-course-updated': { name: 'Course Updated', entry: { x: 680, y: 1131 }, center: { x: 680, y: 1155 }, exit: { x: 680, y: 1179 } },
+
+        // Branch 3: Enrollment (X = 1040)
+        'node-admin-enroll-mgmt': { name: 'Enrollment', entry: { x: 1040, y: 591 }, center: { x: 1040, y: 615 }, exit: { x: 1040, y: 639 } },
+        'node-admin-enroll-student': { name: 'Select Student', entry: { x: 1040, y: 681 }, entryRetry: { x: 1130, y: 705 }, center: { x: 1040, y: 705 }, exit: { x: 1040, y: 729 } },
+        'node-admin-enroll-course': { name: 'Select Course', entry: { x: 1040, y: 771 }, center: { x: 1040, y: 795 }, exit: { x: 1040, y: 819 } },
+        'node-admin-enroll-check': { name: 'Check Student Eligibility', entry: { x: 1040, y: 861 }, center: { x: 1040, y: 890 }, exit: { x: 1040, y: 919 } },
+        'node-admin-enroll-decision': { name: 'Eligible to Enroll?', entry: { x: 1040, y: 960 }, center: { x: 1040, y: 1000 }, exit: { x: 1040, y: 1040 }, exitNo: { x: 1120, y: 1000 } },
+        'node-admin-enroll-confirm': { name: 'Confirm Enrollment', entry: { x: 1040, y: 1091 }, center: { x: 1040, y: 1115 }, exit: { x: 1040, y: 1139 } },
+        'node-admin-enroll-success': { name: 'Enrollment Successful', entry: { x: 1040, y: 1181 }, center: { x: 1040, y: 1205 }, exit: { x: 1040, y: 1229 } },
+
+        // Enrollment Rejection Flow (X = 1240)
+        'node-admin-enroll-rejected': { name: 'Enrollment Rejected', entry: { x: 1170, y: 1000 }, center: { x: 1240, y: 1000 }, exit: { x: 1240, y: 977 } },
+        'node-admin-enroll-reason': { name: 'Show Reason', entry: { x: 1240, y: 913 }, center: { x: 1240, y: 890 }, exit: { x: 1240, y: 867 } }
+    };
+
+    // Shared instructor spine (9 paths, with single login error loop)
+    const instCommonSpine = [
+        { pathId: 'path-inst-start-login', from: 'node-inst-start', to: 'node-inst-login' },
+        { pathId: 'path-inst-login-valid', from: 'node-inst-login', to: 'node-inst-valid' },
+        // Single Login Error Loop
+        { pathId: 'path-inst-valid-error', from: 'node-inst-valid', to: 'node-inst-error', exitKey: 'exitNo', isErrorPath: true },
+        { pathId: 'path-inst-error-login', from: 'node-inst-error', to: 'node-inst-login', entryKey: 'entryRetry', isErrorPath: true },
+        // Second login attempt -> Valid -> YES
+        { pathId: 'path-inst-login-valid', from: 'node-inst-login', to: 'node-inst-valid' },
+        { pathId: 'path-inst-valid-dash', from: 'node-inst-valid', to: 'node-inst-dashboard' },
+        { pathId: 'path-inst-dash-courses', from: 'node-inst-dashboard', to: 'node-inst-courses' },
+        { pathId: 'path-inst-courses-overview', from: 'node-inst-courses', to: 'node-inst-overview' },
+        { pathId: 'path-inst-overview-choose', from: 'node-inst-overview', to: 'node-inst-choose' }
+    ];
+    // Shared admin spine with single login error loop (Default run)
+    const adminCommonSpine = [
+        { pathId: 'path-admin-start-login', from: 'node-admin-start', to: 'node-admin-login' },
+        { pathId: 'path-admin-login-valid', from: 'node-admin-login', to: 'node-admin-valid' },
+        // Single Login Error Loop
+        { pathId: 'path-admin-valid-error', from: 'node-admin-valid', to: 'node-admin-error', exitKey: 'exitNo', isErrorPath: true },
+        { pathId: 'path-admin-error-login', from: 'node-admin-error', to: 'node-admin-login', entryKey: 'entryRetry', isErrorPath: true },
+        // Second login attempt -> Valid -> YES
+        { pathId: 'path-admin-login-valid', from: 'node-admin-login', to: 'node-admin-valid' },
+        { pathId: 'path-admin-valid-dash', from: 'node-admin-valid', to: 'node-admin-dashboard' },
+        { pathId: 'path-admin-dash-choose', from: 'node-admin-dashboard', to: 'node-admin-choose' }
+    ];
+
+    // Direct admin spine (for Enrollment branch as specified: START -> Login -> Valid? -> YES -> Admin Dashboard -> Choose Area)
+    const adminDirectSpine = [
+        { pathId: 'path-admin-start-login', from: 'node-admin-start', to: 'node-admin-login' },
+        { pathId: 'path-admin-login-valid', from: 'node-admin-login', to: 'node-admin-valid' },
+        { pathId: 'path-admin-valid-dash', from: 'node-admin-valid', to: 'node-admin-dashboard' },
+        { pathId: 'path-admin-dash-choose', from: 'node-admin-dashboard', to: 'node-admin-choose' }
+    ];
+
+
+    const workflowDefinitions = {
+        // Student Workflows (Exact SVG Path ID Alignments for Continuous Zero-Discontinuity Motion)
+        'assignment': {
+            id: 'assignment',
+            role: 'student',
+            name: 'Academic Assignment Flow',
+            badgeText: '15 Steps',
+            finalNodeId: 'node-grade-feedback',
+            activityExitKey: 'exitAssignment',
+            paths: [
+                { pathId: 'path-start-login', from: 'node-start', to: 'node-login' },
+                { pathId: 'path-login-valid', from: 'node-login', to: 'node-valid' },
+                { pathId: 'path-valid-error', from: 'node-valid', to: 'node-error', exitKey: 'exitNo', isErrorPath: true },
+                { pathId: 'path-error-login', from: 'node-error', to: 'node-login', entryKey: 'entryRetry', isErrorPath: true },
+                { pathId: 'path-login-valid', from: 'node-login', to: 'node-valid' },
+                { pathId: 'path-valid-dashboard', from: 'node-valid', to: 'node-dashboard' },
+                { pathId: 'path-dashboard-courses', from: 'node-dashboard', to: 'node-courses' },
+                { pathId: 'path-courses-overview', from: 'node-courses', to: 'node-overview' },
+                { pathId: 'path-overview-activity', from: 'node-overview', to: 'node-activity' },
+                { pathId: 'path-activity-assignment', from: 'node-activity', to: 'node-assign-details' },
+                { pathId: 'path-assignment-upload', from: 'node-assign-details', to: 'node-upload-file' },
+                { pathId: 'path-upload-uploaded', from: 'node-upload-file', to: 'node-uploaded' },
+                { pathId: 'path-uploaded-submit', from: 'node-uploaded', to: 'node-submit-assign' },
+                { pathId: 'path-submit-confirmed', from: 'node-submit-assign', to: 'node-sub-confirmed' },
+                { pathId: 'path-confirmed-grade', from: 'node-sub-confirmed', to: 'node-grade-feedback' }
+            ]
+        },
+        'materials': {
+            id: 'materials',
+            role: 'student',
+            name: 'Learning Materials Flow',
+            badgeText: '11 Steps',
+            finalNodeId: 'node-download',
+            activityExitKey: 'exitMaterials',
+            paths: [
+                { pathId: 'path-start-login', from: 'node-start', to: 'node-login' },
+                { pathId: 'path-login-valid', from: 'node-login', to: 'node-valid' },
+                { pathId: 'path-valid-error', from: 'node-valid', to: 'node-error', exitKey: 'exitNo', isErrorPath: true },
+                { pathId: 'path-error-login', from: 'node-error', to: 'node-login', entryKey: 'entryRetry', isErrorPath: true },
+                { pathId: 'path-login-valid', from: 'node-login', to: 'node-valid' },
+                { pathId: 'path-valid-dashboard', from: 'node-valid', to: 'node-dashboard' },
+                { pathId: 'path-dashboard-courses', from: 'node-dashboard', to: 'node-courses' },
+                { pathId: 'path-courses-overview', from: 'node-courses', to: 'node-overview' },
+                { pathId: 'path-overview-activity', from: 'node-overview', to: 'node-activity' },
+                { pathId: 'path-activity-materials', from: 'node-activity', to: 'node-materials' },
+                { pathId: 'path-materials-download', from: 'node-materials', to: 'node-download' }
+            ]
+        },
+        'quiz': {
+            id: 'quiz',
+            role: 'student',
+            name: 'Quiz / Examination Flow',
+            badgeText: '13 Steps',
+            finalNodeId: 'node-quiz-result',
+            activityExitKey: 'exitQuiz',
+            paths: [
+                { pathId: 'path-start-login', from: 'node-start', to: 'node-login' },
+                { pathId: 'path-login-valid', from: 'node-login', to: 'node-valid' },
+                { pathId: 'path-valid-error', from: 'node-valid', to: 'node-error', exitKey: 'exitNo', isErrorPath: true },
+                { pathId: 'path-error-login', from: 'node-error', to: 'node-login', entryKey: 'entryRetry', isErrorPath: true },
+                { pathId: 'path-login-valid', from: 'node-login', to: 'node-valid' },
+                { pathId: 'path-valid-dashboard', from: 'node-valid', to: 'node-dashboard' },
+                { pathId: 'path-dashboard-courses', from: 'node-dashboard', to: 'node-courses' },
+                { pathId: 'path-courses-overview', from: 'node-courses', to: 'node-overview' },
+                { pathId: 'path-overview-activity', from: 'node-overview', to: 'node-activity' },
+                { pathId: 'path-activity-quiz', from: 'node-activity', to: 'node-quiz-details' },
+                { pathId: 'path-quiz-avail', from: 'node-quiz-details', to: 'node-available' },
+                { pathId: 'path-avail-start', from: 'node-available', to: 'node-start-quiz' },
+                { pathId: 'path-start-result', from: 'node-start-quiz', to: 'node-quiz-result' }
+            ]
+        },
+
+        // Simplified Instructor Core Workflows (3 Core Workflows)
+        'inst-assignments': {
+            id: 'inst-assignments',
+            role: 'instructor',
+            name: 'Instructor Assignment Flow',
+            badgeText: '15 Steps',
+            finalNodeId: 'node-inst-asgn-avail',
+            activityExitKey: 'exitLeft',
+            paths: [
+                ...instCommonSpine,
+                { pathId: 'path-inst-choose-asgn', from: 'node-inst-choose', to: 'node-inst-asgn' },
+                { pathId: 'path-inst-asgn-create', from: 'node-inst-asgn', to: 'node-inst-asgn-create' },
+                { pathId: 'path-inst-asgn-instr', from: 'node-inst-asgn-create', to: 'node-inst-asgn-instr' },
+                { pathId: 'path-inst-asgn-due', from: 'node-inst-asgn-instr', to: 'node-inst-asgn-due' },
+                { pathId: 'path-inst-asgn-publish', from: 'node-inst-asgn-due', to: 'node-inst-asgn-publish' },
+                { pathId: 'path-inst-asgn-avail', from: 'node-inst-asgn-publish', to: 'node-inst-asgn-avail' }
+            ]
+        },
+        'inst-materials': {
+            id: 'inst-materials',
+            role: 'instructor',
+            name: 'Instructor Learning Materials Flow',
+            badgeText: '19 Steps',
+            finalNodeId: 'node-inst-mat-avail',
+            activityExitKey: 'exitCenter',
+            paths: [
+                ...instCommonSpine,
+                { pathId: 'path-inst-choose-mat', from: 'node-inst-choose', to: 'node-inst-mat' },
+                { pathId: 'path-inst-mat-type', from: 'node-inst-mat', to: 'node-inst-mat-type' },
+                { pathId: 'path-inst-mat-res', from: 'node-inst-mat-type', to: 'node-inst-mat-res' },
+                { pathId: 'path-inst-mat-upload', from: 'node-inst-mat-res', to: 'node-inst-mat-upload' },
+                { pathId: 'path-inst-mat-check', from: 'node-inst-mat-upload', to: 'node-inst-mat-check' },
+                // Single Upload Error Loop
+                { pathId: 'path-inst-mat-err', from: 'node-inst-mat-check', to: 'node-inst-mat-err', exitKey: 'exitNo', isErrorPath: true },
+                { pathId: 'path-inst-mat-retry', from: 'node-inst-mat-err', to: 'node-inst-mat-upload', entryKey: 'entryRetry', isErrorPath: true },
+                // Second upload attempt -> Valid -> YES
+                { pathId: 'path-inst-mat-check', from: 'node-inst-mat-upload', to: 'node-inst-mat-check' },
+                { pathId: 'path-inst-mat-publish', from: 'node-inst-mat-check', to: 'node-inst-mat-publish' },
+                { pathId: 'path-inst-mat-avail', from: 'node-inst-mat-publish', to: 'node-inst-mat-avail' }
+            ]
+        },
+        'inst-quizzes': {
+            id: 'inst-quizzes',
+            role: 'instructor',
+            name: 'Instructor Quiz / Exam Flow',
+            badgeText: '15 Steps',
+            finalNodeId: 'node-inst-quiz-avail',
+            activityExitKey: 'exitRight',
+            paths: [
+                ...instCommonSpine,
+                { pathId: 'path-inst-choose-quiz', from: 'node-inst-choose', to: 'node-inst-quiz' },
+                { pathId: 'path-inst-quiz-create', from: 'node-inst-quiz', to: 'node-inst-quiz-create' },
+                { pathId: 'path-inst-quiz-quest', from: 'node-inst-quiz-create', to: 'node-inst-quiz-quest' },
+                { pathId: 'path-inst-quiz-time', from: 'node-inst-quiz-quest', to: 'node-inst-quiz-time' },
+                { pathId: 'path-inst-quiz-publish', from: 'node-inst-quiz-time', to: 'node-inst-quiz-publish' },
+                { pathId: 'path-inst-quiz-avail', from: 'node-inst-quiz-publish', to: 'node-inst-quiz-avail' }
+            ]
+        },
+
+        // ==========================================
+        // ADMIN WORKFLOWS
+        // ==========================================
+        'admin-users': {
+            id: 'admin-users',
+            role: 'admin',
+            name: 'Admin System Workflow',
+            badgeText: '13 Steps',
+            finalNodeId: 'node-admin-user-updated',
+            activityExitKey: 'exitUsers',
+            paths: [
+                ...adminCommonSpine,
+                { pathId: 'path-admin-choose-users', from: 'node-admin-choose', to: 'node-admin-user-mgmt' },
+                { pathId: 'path-admin-user-view', from: 'node-admin-user-mgmt', to: 'node-admin-user-view' },
+                { pathId: 'path-admin-user-edit', from: 'node-admin-user-view', to: 'node-admin-user-edit' },
+                { pathId: 'path-admin-user-role', from: 'node-admin-user-edit', to: 'node-admin-user-role' },
+                { pathId: 'path-admin-user-save', from: 'node-admin-user-role', to: 'node-admin-user-save' },
+                { pathId: 'path-admin-user-updated', from: 'node-admin-user-save', to: 'node-admin-user-updated' }
+            ]
+        },
+        'admin-courses': {
+            id: 'admin-courses',
+            role: 'admin',
+            name: 'Admin System Workflow',
+            badgeText: '14 Steps',
+            finalNodeId: 'node-admin-course-updated',
+            activityExitKey: 'exitCourses',
+            paths: [
+                ...adminCommonSpine,
+                { pathId: 'path-admin-choose-courses', from: 'node-admin-choose', to: 'node-admin-course-mgmt' },
+                { pathId: 'path-admin-course-view', from: 'node-admin-course-mgmt', to: 'node-admin-course-view' },
+                { pathId: 'path-admin-course-edit', from: 'node-admin-course-view', to: 'node-admin-course-edit' },
+                { pathId: 'path-admin-course-inst', from: 'node-admin-course-edit', to: 'node-admin-course-inst' },
+                { pathId: 'path-admin-course-details', from: 'node-admin-course-inst', to: 'node-admin-course-details' },
+                { pathId: 'path-admin-course-publish', from: 'node-admin-course-details', to: 'node-admin-course-publish' },
+                { pathId: 'path-admin-course-updated', from: 'node-admin-course-publish', to: 'node-admin-course-updated' }
+            ]
+        },
+        'admin-enrollment': {
+            id: 'admin-enrollment',
+            role: 'admin',
+            name: 'Admin System Workflow',
+            badgeText: '11 Steps',
+            finalNodeId: 'node-admin-enroll-success',
+            activityExitKey: 'exitEnroll',
+            paths: [
+                ...adminDirectSpine,
+                { pathId: 'path-admin-choose-enroll', from: 'node-admin-choose', to: 'node-admin-enroll-mgmt' },
+                { pathId: 'path-admin-enroll-student', from: 'node-admin-enroll-mgmt', to: 'node-admin-enroll-student' },
+                { pathId: 'path-admin-enroll-course', from: 'node-admin-enroll-student', to: 'node-admin-enroll-course' },
+                { pathId: 'path-admin-enroll-check', from: 'node-admin-enroll-course', to: 'node-admin-enroll-check' },
+                { pathId: 'path-admin-enroll-decision', from: 'node-admin-enroll-check', to: 'node-admin-enroll-decision' },
+                { pathId: 'path-admin-enroll-yes', from: 'node-admin-enroll-decision', to: 'node-admin-enroll-confirm' },
+                { pathId: 'path-admin-enroll-success', from: 'node-admin-enroll-confirm', to: 'node-admin-enroll-success' }
+            ]
+        },
+        'admin-enrollment-rejected': {
+            id: 'admin-enrollment-rejected',
+            role: 'admin',
+            name: 'Admin System Workflow',
+            badgeText: '12 Steps',
+            finalNodeId: 'node-admin-enroll-student',
+            activityExitKey: 'exitEnroll',
+            paths: [
+                ...adminDirectSpine,
+                { pathId: 'path-admin-choose-enroll', from: 'node-admin-choose', to: 'node-admin-enroll-mgmt' },
+                { pathId: 'path-admin-enroll-student', from: 'node-admin-enroll-mgmt', to: 'node-admin-enroll-student' },
+                { pathId: 'path-admin-enroll-course', from: 'node-admin-enroll-student', to: 'node-admin-enroll-course' },
+                { pathId: 'path-admin-enroll-check', from: 'node-admin-enroll-course', to: 'node-admin-enroll-check' },
+                { pathId: 'path-admin-enroll-decision', from: 'node-admin-enroll-check', to: 'node-admin-enroll-decision' },
+                { pathId: 'path-admin-enroll-no', from: 'node-admin-enroll-decision', to: 'node-admin-enroll-rejected', exitKey: 'exitNo', isErrorPath: true },
+                { pathId: 'path-admin-enroll-show-reason', from: 'node-admin-enroll-rejected', to: 'node-admin-enroll-reason', isErrorPath: true },
+                { pathId: 'path-admin-enroll-return', from: 'node-admin-enroll-reason', to: 'node-admin-enroll-student', entryKey: 'entryRetry', isErrorPath: true }
+            ]
+        }
+    };
+
+    // All known paths across both diagrams for complete reset
+    const allKnownPaths = [
+        // Student paths (aligned to exact SVG IDs)
+        'path-start-login', 'path-login-valid', 'path-valid-error', 'path-error-login',
+        'path-valid-dashboard', 'path-dash-secondary-bus', 'path-sec-calendar', 'path-sec-announcements',
+        'path-sec-messages', 'path-sec-profile', 'path-dashboard-courses', 'path-courses-overview',
+        'path-overview-activity', 'path-activity-assignment', 'path-assignment-upload',
+        'path-upload-uploaded', 'path-uploaded-req', 'path-req-upload', 'path-uploaded-submit',
+        'path-submit-confirmed', 'path-confirmed-grade', 'path-activity-materials',
+        'path-materials-download', 'path-activity-quiz', 'path-quiz-avail', 'path-avail-upcoming',
+        'path-avail-start', 'path-start-result',
+        
+        // Simplified Instructor paths
+        'path-inst-start-login', 'path-inst-login-valid', 'path-inst-valid-error', 'path-inst-error-login',
+        'path-inst-valid-dash', 'path-inst-dash-courses', 'path-inst-courses-overview', 'path-inst-overview-choose',
+        'path-inst-choose-asgn', 'path-inst-asgn-create', 'path-inst-asgn-instr', 'path-inst-asgn-due', 'path-inst-asgn-publish', 'path-inst-asgn-avail',
+        'path-inst-choose-mat', 'path-inst-mat-type', 'path-inst-mat-res', 'path-inst-mat-upload', 'path-inst-mat-check', 'path-inst-mat-err', 'path-inst-mat-retry', 'path-inst-mat-publish', 'path-inst-mat-avail',
+        ,
+
+        // Admin paths
+        'path-admin-start-login', 'path-admin-login-valid', 'path-admin-valid-error', 'path-admin-error-login',
+        'path-admin-valid-dash', 'path-admin-dash-choose',
+        'path-admin-choose-users', 'path-admin-choose-courses', 'path-admin-choose-enroll',
+        'path-admin-user-view', 'path-admin-user-edit', 'path-admin-user-role', 'path-admin-user-save', 'path-admin-user-updated',
+        'path-admin-course-view', 'path-admin-course-edit', 'path-admin-course-inst', 'path-admin-course-details', 'path-admin-course-publish', 'path-admin-course-updated',
+        'path-admin-enroll-student', 'path-admin-enroll-course', 'path-admin-enroll-check', 'path-admin-enroll-decision',
+        'path-admin-enroll-yes', 'path-admin-enroll-success', 'path-admin-enroll-no', 'path-admin-enroll-show-reason', 'path-admin-enroll-return'
+    ];
+
+    let currentRole = 'student'; // 'student' | 'instructor'
+    let currentWorkflowKey = 'assignment';
+    let timeline = [];
+    let TOTAL_STEPS = 0;
+
+    function buildTimelineForWorkflow(wfKey) {
+        const def = workflowDefinitions[wfKey];
+        const list = def.paths;
+        const steps = [];
+
+        let startNodeId = 'node-start';
+        if (def.role === 'instructor') startNodeId = 'node-inst-start';
+        if (def.role === 'admin') startNodeId = 'node-admin-start';
+
+        // 1. Initial departure from START center to exit
+        steps.push({
+            type: 'node-transit',
+            nodeId: startNodeId,
+            fromPt: nodeRegistry[startNodeId].center,
+            toPt: nodeRegistry[startNodeId].exit,
+            duration: 350
+        });
+
+        // 2. Connector & Node transits
+        list.forEach((item, index) => {
+            steps.push({
+                type: 'path-transit',
+                pathId: item.pathId,
+                fromNodeId: item.from,
+                toNodeId: item.to,
+                isErrorPath: !!item.isErrorPath,
+                pathIndex: index,
+                duration: 650
+            });
+
+            const toNodeInfo = nodeRegistry[item.to];
+            if (!toNodeInfo) return;
+            const isDestination = (index === list.length - 1);
+
+            if (!isDestination) {
+                // Determine entry point
+                let entryPt = toNodeInfo.entry;
+                if (item.entryKey && toNodeInfo[item.entryKey]) {
+                    entryPt = toNodeInfo[item.entryKey];
+                }
+
+                // Determine exit point for toNodeInfo
+                const nextItem = list[index + 1];
+                let exitPt = toNodeInfo.exit;
+                if (item.to === 'node-activity' || item.to === 'node-inst-choose' || item.to === 'node-admin-choose') {
+                    exitPt = toNodeInfo[def.activityExitKey] || toNodeInfo.exit;
+                } else if (item.exitKey && toNodeInfo[item.exitKey]) {
+                    exitPt = toNodeInfo[item.exitKey];
+                } else if ((item.to === 'node-valid' || item.to === 'node-inst-valid' || item.to === 'node-admin-valid') && nextItem && (nextItem.pathId === 'path-valid-error' || nextItem.pathId === 'path-inst-valid-error' || nextItem.pathId === 'path-admin-valid-error')) {
+                    exitPt = toNodeInfo.exitNo;
+                } else if (item.to === 'node-admin-enroll-decision' && nextItem && nextItem.pathId === 'path-admin-enroll-no') {
+                    exitPt = toNodeInfo.exitNo;
+                } else if (item.to === 'node-inst-mat-check' && nextItem && nextItem.pathId === 'path-inst-mat-err') {
+                    exitPt = toNodeInfo.exitNo;
+                } else if (item.to === 'node-inst-mat-check' && nextItem && nextItem.pathId === 'path-inst-mat-err') {
+                    exitPt = toNodeInfo.exitNo;
+                }
+
+                steps.push({
+                    type: 'node-transit',
+                    nodeId: item.to,
+                    fromPt: entryPt,
+                    midPt: toNodeInfo.center,
+                    toPt: exitPt,
+                    duration: 350
+                });
+            } else {
+                // Final arrival into destination node center
+                steps.push({
+                    type: 'node-transit',
+                    nodeId: item.to,
+                    fromPt: toNodeInfo.entry,
+                    toPt: toNodeInfo.center,
+                    duration: 350,
+                    isFinal: true
+                });
+            }
+        });
+
+        return steps;
+    }
+
+    // Simulation Engine State
+    let stepIndex = 0;
+    let stepProgress = 0; // 0.0 to 1.0 within the current step
+    let speedMultiplier = 1.5;
+    let isPlaying = false;
+    let isCompleted = false;
+    let animationFrameId = null;
+    let lastTimestamp = null;
+
+    // DOM References
+    const nodeTelemetry = document.getElementById('wf-node');
+    const progressTelemetry = document.getElementById('wf-progress');
+    const progressBarFill = document.getElementById('wf-progress-bar');
+    const wfNameEl = document.getElementById('wf-name');
+    const wfBadgeEl = document.getElementById('wf-badge');
+    const btnPlay = document.getElementById('btn-play');
+    const playIcon = document.getElementById('play-icon');
+    const playText = document.getElementById('play-text');
+    const speedVal = document.getElementById('speedVal');
+    const zoomLabel = document.getElementById('zoom-label');
+    const svgWrapper = document.getElementById('svg-wrapper');
+    const btnFit = document.getElementById('btn-fit');
+
+    // Zoom and View State
+    let currentZoom = 1.0;
+    let isFitToView = false;
+
+    // Initialize with default workflow (Student Assignment)
+    timeline = buildTimelineForWorkflow(currentWorkflowKey);
+    TOTAL_STEPS = timeline.length;
+    updateTokenPosition(nodeRegistry['node-start'].center.x, nodeRegistry['node-start'].center.y);
+    setNodeActive('node-start');
+
+    /**
+     * Top-Level Role Switcher (Student vs Instructor)
+     */
+    function setRole(role, triggerSelect = true) {
+        currentRole = role;
+
+        // Update role tabs in sidebar
+        document.querySelectorAll('.role-tab').forEach(el => el.classList.remove('active'));
+        const tabEl = document.getElementById(`role-${role}`);
+        if (tabEl) tabEl.classList.add('active');
+
+        // Toggle SVG diagrams
+        const studentSvg = document.getElementById('svg-student');
+        const instructorSvg = document.getElementById('svg-instructor');
+        const adminSvg = document.getElementById('svg-admin');
+
+        const studentBranches = document.getElementById('selector-student-branches');
+        const instructorBranches = document.getElementById('selector-instructor-branches');
+        const adminBranches = document.getElementById('selector-admin-branches');
+        const adminEnrollOptions = document.getElementById('admin-enroll-options');
+
+        if (role === 'student') {
+            if (studentSvg) studentSvg.classList.remove('hidden-flowchart');
+            if (instructorSvg) instructorSvg.classList.add('hidden-flowchart');
+            if (adminSvg) adminSvg.classList.add('hidden-flowchart');
+
+            if (studentBranches) studentBranches.style.display = 'flex';
+            if (instructorBranches) instructorBranches.style.display = 'none';
+            if (adminBranches) adminBranches.style.display = 'none';
+            if (adminEnrollOptions) adminEnrollOptions.style.display = 'none';
+
+            if (triggerSelect) selectWorkflow('assignment');
+        } else if (role === 'instructor') {
+            if (studentSvg) studentSvg.classList.add('hidden-flowchart');
+            if (instructorSvg) instructorSvg.classList.remove('hidden-flowchart');
+            if (adminSvg) adminSvg.classList.add('hidden-flowchart');
+
+            if (studentBranches) studentBranches.style.display = 'none';
+            if (instructorBranches) instructorBranches.style.display = 'flex';
+            if (adminBranches) adminBranches.style.display = 'none';
+            if (adminEnrollOptions) adminEnrollOptions.style.display = 'none';
+
+            if (triggerSelect) selectWorkflow('inst-assignments');
+        } else if (role === 'admin') {
+            if (studentSvg) studentSvg.classList.add('hidden-flowchart');
+            if (instructorSvg) instructorSvg.classList.add('hidden-flowchart');
+            if (adminSvg) adminSvg.classList.remove('hidden-flowchart');
+
+            if (studentBranches) studentBranches.style.display = 'none';
+            if (instructorBranches) instructorBranches.style.display = 'none';
+            if (adminBranches) adminBranches.style.display = 'flex';
+
+            if (triggerSelect) selectWorkflow('admin-users');
+        }
+    }
+
+    /**
+     * Interactive Workflow & Branch Switcher
+     */
+    function selectWorkflow(key) {
+        if (!workflowDefinitions[key]) return;
+        currentWorkflowKey = key;
+        const def = workflowDefinitions[key];
+
+        // Ensure currentRole matches the selected workflow
+        if (def.role && def.role !== currentRole) {
+            setRole(def.role, false);
+        }
+
+        // Update active tab buttons in sidebar
+        document.querySelectorAll('.wf-tab, .branch-chip').forEach(el => el.classList.remove('active'));
+        
+        let tabKey = key;
+        if (key === 'admin-enrollment-rejected') tabKey = 'admin-enrollment';
+        const activeTab = document.getElementById(`tab-${tabKey}`);
+        if (activeTab) activeTab.classList.add('active');
+
+        // Manage Admin Enrollment Sub-Options
+        const adminEnrollOptions = document.getElementById('admin-enroll-options');
+        if (adminEnrollOptions) {
+            if (key === 'admin-enrollment' || key === 'admin-enrollment-rejected') {
+                adminEnrollOptions.style.display = 'flex';
+                if (key === 'admin-enrollment') {
+                    const chipYes = document.getElementById('chip-enroll-yes');
+                    if (chipYes) chipYes.classList.add('active');
+                } else {
+                    const chipNo = document.getElementById('chip-enroll-no');
+                    if (chipNo) chipNo.classList.add('active');
+                }
+            } else {
+                adminEnrollOptions.style.display = 'none';
+            }
+        }
+
+        // Update SVG branch badge highlights across diagrams
+        document.querySelectorAll('.clickable-badge').forEach(el => el.classList.remove('selected-branch'));
+        const svgBadgeGroup = document.getElementById(`badge-${key}`) || document.getElementById(`badge-branch-${key}`) || document.getElementById(`badge-${tabKey}`);
+        if (svgBadgeGroup) svgBadgeGroup.classList.add('selected-branch');
+
+        // Update Telemetry Header
+        wfNameEl.textContent = def.name;
+        wfBadgeEl.textContent = def.badgeText;
+
+        // Rebuild timeline and reset
+        timeline = buildTimelineForWorkflow(key);
+        TOTAL_STEPS = timeline.length;
+        handleResetClick();
+    }
+
+    function getActiveTokenEl() {
+        if (currentRole === 'admin') {
+            return document.getElementById('workflow-token-admin');
+        }
+        return (currentRole === 'instructor') 
+            ? document.getElementById('workflow-token-inst')
+            : document.getElementById('workflow-token');
+    }
+
+    function updateTokenPosition(x, y) {
+        const token = getActiveTokenEl();
+        if (token) {
+            token.setAttribute('transform', `translate(${x}, ${y})`);
+        }
+    }
+
+    function setNodeActive(nodeId) {
+        const el = document.getElementById(nodeId);
+        if (el) {
+            el.classList.remove('completed-node', 'completed-error-node');
+            el.classList.add('active-node');
+        }
+    }
+
+    function setNodeCompleted(nodeId) {
+        const el = document.getElementById(nodeId);
+        if (el) {
+            el.classList.remove('active-node', 'completed-error-node');
+            el.classList.add('completed-node');
+        }
+    }
+
+    function setNodeErrorCompleted(nodeId) {
+        const el = document.getElementById(nodeId);
+        if (el) {
+            el.classList.remove('active-node', 'completed-node');
+            el.classList.add('completed-error-node');
+        }
+    }
+
+    function setConnectorActive(pathId) {
+        const el = document.getElementById(pathId);
+        if (el) {
+            el.classList.remove('completed-path', 'completed-error-path');
+            el.classList.add('active-path');
+            let marker = 'url(#arrow-blue)';
+            if (pathId.startsWith('path-inst-')) marker = 'url(#arrow-blue-inst)';
+            if (pathId.startsWith('path-admin-')) marker = 'url(#arrow-blue-admin)';
+            el.setAttribute('marker-end', marker);
+        }
+    }
+
+    function setConnectorCompleted(pathId) {
+        const el = document.getElementById(pathId);
+        if (el) {
+            el.classList.remove('active-path', 'completed-error-path');
+            el.classList.add('completed-path');
+            let marker = 'url(#arrow-green)';
+            if (pathId.startsWith('path-inst-')) marker = 'url(#arrow-green-inst)';
+            if (pathId.startsWith('path-admin-')) marker = 'url(#arrow-green-admin)';
+            el.setAttribute('marker-end', marker);
+        }
+    }
+
+    function setConnectorErrorCompleted(pathId) {
+        const el = document.getElementById(pathId);
+        if (el) {
+            el.classList.remove('active-path', 'completed-path');
+            el.classList.add('completed-error-path');
+            let marker = 'url(#arrow-red)';
+            if (pathId.startsWith('path-inst-')) marker = 'url(#arrow-red-inst)';
+            if (pathId.startsWith('path-admin-')) marker = 'url(#arrow-red-admin)';
+            el.setAttribute('marker-end', marker);
+        }
+    }
+
+    function resetConnector(pathId) {
+        const el = document.getElementById(pathId);
+        if (el) {
+            el.classList.remove('active-path', 'completed-path', 'completed-error-path');
+            const isError = el.classList.contains('error-path');
+            let defaultMarker = isError ? 'url(#arrow-red)' : 'url(#arrow-default)';
+            if (pathId.startsWith('path-inst-')) {
+                defaultMarker = isError ? 'url(#arrow-red-inst)' : 'url(#arrow-default-inst)';
+            } else if (pathId.startsWith('path-admin-')) {
+                defaultMarker = isError ? 'url(#arrow-red-admin)' : 'url(#arrow-default-admin)';
+            }
+            el.setAttribute('marker-end', defaultMarker);
+        }
+    }
+
+    /**
+     * Core Animation Loop (Continuous Physical Vector Interpolation via requestAnimationFrame)
+     */
+    function tick(timestamp) {
+        if (!isPlaying) return;
+
+        if (!lastTimestamp) {
+            lastTimestamp = timestamp;
+            animationFrameId = requestAnimationFrame(tick);
+            return;
+        }
+
+        let delta = timestamp - lastTimestamp;
+        lastTimestamp = timestamp;
+        // Cap delta to prevent large leaps on tab refocus or unthrottling
+        if (delta > 100) delta = 100;
+
+        const currentStep = timeline[stepIndex];
+        const stepDuration = currentStep.duration / speedMultiplier;
+        const progressIncrement = delta / stepDuration;
+
+        stepProgress += progressIncrement;
+
+        if (stepProgress >= 1.0) {
+            const overflow = stepProgress - 1.0;
+            renderCurrentStep(currentStep, 1.0);
+            finalizeStep(currentStep);
+
+            stepIndex++;
+            stepProgress = Math.max(0, overflow);
+
+            if (stepIndex >= TOTAL_STEPS) {
+                // Animation Finished
+                onWorkflowComplete();
+                return;
+            }
+            // Immediately render beginning of next step with overflow for zero discontinuity
+            renderCurrentStep(timeline[stepIndex], stepProgress);
+        } else {
+            renderCurrentStep(currentStep, stepProgress);
+        }
+
+        // Update overall percentage
+        const overallFraction = (stepIndex + stepProgress) / TOTAL_STEPS;
+        const pct = Math.min(100, Math.round(overallFraction * 100));
+        progressTelemetry.textContent = `${pct}%`;
+        if (progressBarFill) {
+            progressBarFill.style.width = `${pct}%`;
+        }
+
+        animationFrameId = requestAnimationFrame(tick);
+    }
+
+    /**
+     * Render the Token and Visual State for current step
+     */
+    function renderCurrentStep(step, progress) {
+        const clampedProg = Math.max(0, Math.min(1.0, progress));
+
+        if (step.type === 'path-transit') {
+            const pathEl = document.getElementById(step.pathId);
+            if (pathEl) {
+                const totalLen = pathEl.getTotalLength();
+                const currentDist = clampedProg * totalLen;
+                const pt = pathEl.getPointAtLength(currentDist);
+
+                updateTokenPosition(pt.x, pt.y);
+                setConnectorActive(step.pathId);
+
+                // Set node telemetry to destination node
+                const targetNode = nodeRegistry[step.toNodeId];
+                if (targetNode) {
+                    nodeTelemetry.textContent = targetNode.name;
+                    setNodeActive(step.toNodeId);
+                }
+            }
+        } else if (step.type === 'node-transit') {
+            let x, y;
+            if (step.midPt) {
+                // 2-segment continuous glide: entry -> mid -> exit
+                if (clampedProg < 0.5) {
+                    const localProg = clampedProg / 0.5;
+                    x = step.fromPt.x + (step.midPt.x - step.fromPt.x) * localProg;
+                    y = step.fromPt.y + (step.midPt.y - step.fromPt.y) * localProg;
+                } else {
+                    const localProg = (clampedProg - 0.5) / 0.5;
+                    x = step.midPt.x + (step.toPt.x - step.midPt.x) * localProg;
+                    y = step.midPt.y + (step.toPt.y - step.midPt.y) * localProg;
+                }
+            } else {
+                // Linear 1-segment glide
+                x = step.fromPt.x + (step.toPt.x - step.fromPt.x) * clampedProg;
+                y = step.fromPt.y + (step.toPt.y - step.fromPt.y) * clampedProg;
+            }
+
+            updateTokenPosition(x, y);
+            setNodeActive(step.nodeId);
+            if (nodeRegistry[step.nodeId]) {
+                nodeTelemetry.textContent = nodeRegistry[step.nodeId].name;
+            }
+        }
+    }
+
+    /**
+     * Clean up and mark elements completed when step finishes
+     */
+    function finalizeStep(step) {
+        if (step.type === 'path-transit') {
+            if (step.isErrorPath) {
+                setConnectorErrorCompleted(step.pathId);
+            } else {
+                setConnectorCompleted(step.pathId);
+            }
+            if (step.fromNodeId === 'node-error' || step.fromNodeId === 'node-inst-error' || step.fromNodeId === 'node-admin-error' || step.fromNodeId === 'node-admin-enroll-rejected') {
+                setNodeErrorCompleted(step.fromNodeId);
+            } else {
+                setNodeCompleted(step.fromNodeId);
+            }
+            setNodeActive(step.toNodeId);
+        } else if (step.type === 'node-transit') {
+            if (!step.isFinal) {
+                if (step.nodeId === 'node-error' || step.nodeId === 'node-inst-error' || step.nodeId === 'node-admin-error' || step.nodeId === 'node-admin-enroll-rejected') {
+                    setNodeErrorCompleted(step.nodeId);
+                } else {
+                    setNodeCompleted(step.nodeId);
+                }
+            }
+        }
+    }
+
+    /**
+     * Workflow Completion Handler
+     */
+    function onWorkflowComplete() {
+        isPlaying = false;
+        isCompleted = true;
+        cancelAnimationFrame(animationFrameId);
+
+        // Highlight final destination
+        const def = workflowDefinitions[currentWorkflowKey];
+        const finalNodeId = def.finalNodeId;
+        setNodeCompleted(finalNodeId);
+        const finalPt = nodeRegistry[finalNodeId].center;
+        updateTokenPosition(finalPt.x, finalPt.y);
+
+        nodeTelemetry.textContent = nodeRegistry[finalNodeId].name;
+        progressTelemetry.textContent = '100%';
+        if (progressBarFill) {
+            progressBarFill.style.width = '100%';
+        }
+
+        // Update button visual state
+        btnPlay.classList.add('complete-state');
+        playIcon.textContent = '✓';
+        playText.textContent = 'Complete';
+    }
+
+    /**
+     * USER CONTROLS: Play, Pause, Reset, Speed
+     */
+    function handlePlayClick() {
+        if (isCompleted) {
+            // Restart from START if clicked after completion
+            handleResetClick();
+            handlePlayClick();
+            return;
+        }
+
+        if (isPlaying) return;
+
+        isPlaying = true;
+        lastTimestamp = null;
+        btnPlay.classList.add('primary');
+        btnPlay.classList.remove('complete-state');
+        playIcon.textContent = '▶';
+        playText.textContent = 'Playing...';
+
+        animationFrameId = requestAnimationFrame(tick);
+    }
+
+    function handlePauseClick() {
+        if (!isPlaying) return;
+
+        isPlaying = false;
+        cancelAnimationFrame(animationFrameId);
+        playText.textContent = 'Resume';
+    }
+
+    function handleResetClick() {
+        isPlaying = false;
+        isCompleted = false;
+        cancelAnimationFrame(animationFrameId);
+
+        stepIndex = 0;
+        stepProgress = 0;
+        lastTimestamp = null;
+
+        // Reset all nodes
+        document.querySelectorAll('.node-group').forEach(el => {
+            el.classList.remove('active-node', 'completed-node', 'completed-error-node');
+        });
+
+        // Reset all connectors across all flows
+        allKnownPaths.forEach(pathId => {
+            resetConnector(pathId);
+        });
+
+        // Reset Token to START of current active diagram
+        const def = workflowDefinitions[currentWorkflowKey];
+        let startNodeId = 'node-start';
+        if (def && def.role === 'instructor') startNodeId = 'node-inst-start';
+        if (def && def.role === 'admin') startNodeId = 'node-admin-start';
+        const startPt = nodeRegistry[startNodeId].center;
+        updateTokenPosition(startPt.x, startPt.y);
+        setNodeActive(startNodeId);
+
+        // Reset Telemetry
+        nodeTelemetry.textContent = 'START';
+        progressTelemetry.textContent = '0%';
+        if (progressBarFill) {
+            progressBarFill.style.width = '0%';
+        }
+
+        // Reset Play Button
+        btnPlay.classList.remove('complete-state');
+        btnPlay.classList.add('primary');
+        playIcon.textContent = '▶';
+        playText.textContent = 'Play Workflow';
+    }
+
+    function handleSpeedChange(val) {
+        speedMultiplier = parseFloat(val);
+        speedVal.textContent = `${speedMultiplier.toFixed(1)}x`;
+    }
+
+    /**
+     * ZOOM & VIEW CONTROLS
+     */
+    function setZoom(val) {
+        currentZoom = Math.max(0.4, Math.min(2.0, val));
+        isFitToView = false;
+        if (btnFit) btnFit.classList.remove('active');
+        applyZoom();
+    }
+
+    function zoomIn() {
+        setZoom(currentZoom + 0.15);
+    }
+
+    function zoomOut() {
+        setZoom(currentZoom - 0.15);
+    }
+
+    function resetZoom() {
+        setZoom(1.0);
+    }
+
+    function toggleFitView() {
+        const container = document.querySelector('.canvas-card');
+        if (!container || !svgWrapper) return;
+
+        if (!isFitToView) {
+            const availHeight = container.clientHeight - 80;
+            const fitScale = Math.min(1.0, availHeight / 1440);
+            currentZoom = Math.round(fitScale * 100) / 100;
+            isFitToView = true;
+            if (btnFit) btnFit.classList.add('active');
+        } else {
+            currentZoom = 1.0;
+            isFitToView = false;
+            if (btnFit) btnFit.classList.remove('active');
+        }
+        applyZoom();
+    }
+
+    function applyZoom() {
+        if (svgWrapper) {
+            svgWrapper.style.transform = `scale(${currentZoom})`;
+        }
+        if (zoomLabel) {
+            zoomLabel.textContent = `${Math.round(currentZoom * 100)}%`;
+        }
+    }
+
+    // Expose handlers to window for inline HTML onclick attributes
+    window.handlePlayClick = handlePlayClick;
+    window.handlePauseClick = handlePauseClick;
+    window.handleResetClick = handleResetClick;
+    window.handleSpeedChange = handleSpeedChange;
+    window.selectWorkflow = selectWorkflow;
+    window.setRole = setRole;
+    window.buildTimelineForWorkflow = buildTimelineForWorkflow;
+    window.getTimeline = () => timeline;
+    window.workflowDefinitions = workflowDefinitions;
+    window.getIsPlaying = () => isPlaying;
+    window.getStepIndex = () => stepIndex;
+    window.getStepProgress = () => stepProgress;
+    window.getSpeedMultiplier = () => speedMultiplier;
+    window.zoomIn = zoomIn;
+    window.zoomOut = zoomOut;
+    window.resetZoom = resetZoom;
+    window.toggleFitView = toggleFitView;
+
+</script>
+</body>
+</html>

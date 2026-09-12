@@ -1,0 +1,3590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduFlex - Interactive Entity Relationship Diagram (ERD) Studio</title>
+    <style>
+        :root {
+            --bg-page: #f8fafc;
+            --bg-canvas: #ffffff;
+            --border-ui: #e2e8f0;
+            --border-card: #cbd5e1;
+            --text-heading: #0f172a;
+            --text-body: #334155;
+            --text-muted: #64748b;
+            --color-primary: #2563eb;
+            --color-primary-hover: #1d4ed8;
+            --color-student: #2563eb;
+            --color-instructor: #0d9488;
+            --color-admin: #7c3aed;
+            --color-activity: #334155;
+            --color-danger: #ef4444;
+            --color-danger-hover: #dc2626;
+            --color-success: #16a34a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-body);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Top Presentation Header & Editor Toolbar */
+        .erd-header {
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-ui);
+            padding: 10px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            z-index: 30;
+            flex-shrink: 0;
+        }
+
+        .header-title-group {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand-badge {
+            background: linear-gradient(135deg, #1e40af, #2563eb);
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 13px;
+            letter-spacing: 1.5px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+        }
+
+        .titles h1 {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text-heading);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .version-pill {
+            font-size: 10px;
+            font-weight: 700;
+            background: #eff6ff;
+            color: #2563eb;
+            padding: 2px 8px;
+            border-radius: 6px;
+            border: 1px solid #bfdbfe;
+        }
+
+        .titles p {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* Header Actions & Tools */
+        .erd-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            background: #ffffff;
+            border: 1px solid var(--border-ui);
+            color: var(--text-body);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: var(--text-heading);
+        }
+
+        .btn.primary {
+            background: var(--color-primary);
+            border-color: var(--color-primary);
+            color: #ffffff;
+        }
+
+        .btn.primary:hover {
+            background: var(--color-primary-hover);
+        }
+
+        .btn.export-png-btn, .btn.export-jpg-btn {
+            background: linear-gradient(135deg, #0d9488, #0f766e);
+            border-color: #0f766e;
+            color: #ffffff;
+            box-shadow: 0 2px 5px rgba(13, 148, 136, 0.25);
+        }
+
+        .btn.export-png-btn:hover, .btn.export-jpg-btn:hover {
+            background: linear-gradient(135deg, #0f766e, #115e59);
+        }
+
+        .btn.danger {
+            background: #fee2e2;
+            border-color: #fca5a5;
+            color: #b91c1c;
+        }
+
+        .btn.danger:hover {
+            background: #fecaca;
+        }
+
+        .btn-xs {
+            padding: 3px 7px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* Edit Menu & Dropdown */
+        .menu-dropdown-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .menu-dropdown-panel {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            min-width: 220px;
+            background: #ffffff;
+            border: 1px solid var(--border-ui);
+            border-radius: 8px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+            padding: 6px;
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .menu-dropdown-panel.show {
+            display: flex;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 7px 10px;
+            background: transparent;
+            border: none;
+            border-radius: 5px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-heading);
+            cursor: pointer;
+            text-align: left;
+            transition: background 0.12s ease;
+            box-sizing: border-box;
+        }
+
+        .menu-item:hover:not(:disabled) {
+            background: #f1f5f9;
+            color: var(--color-primary);
+        }
+
+        .menu-item-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .menu-shortcut {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+
+        .menu-divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 4px 0;
+        }
+
+        /* Quick Undo / Redo buttons & Disabled States */
+        .history-quick-btns {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-icon {
+            padding: 6px 9px;
+            font-size: 13px;
+        }
+
+        .btn:disabled,
+        .menu-item:disabled,
+        .menu-item.is-disabled {
+            opacity: 0.45 !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+            filter: grayscale(70%);
+        }
+
+        /* Zoom Control Group */
+        .zoom-group {
+            display: flex;
+            align-items: center;
+            background: #ffffff;
+            border: 1px solid var(--border-ui);
+            border-radius: 6px;
+            padding: 2px;
+            gap: 2px;
+        }
+
+        .zoom-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-body);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .zoom-btn:hover {
+            background: #f1f5f9;
+            color: var(--text-heading);
+        }
+
+        .zoom-display {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            min-width: 44px;
+            text-align: center;
+        }
+
+        /* Secondary Sub-Bar / Instructions & Legend */
+        .erd-subbar {
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-ui);
+            padding: 6px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            flex-shrink: 0;
+            z-index: 20;
+        }
+
+        .legend-items {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+        }
+
+        .legend-notation {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-left: 1px solid var(--border-ui);
+            padding-left: 16px;
+        }
+
+        .notation-badge {
+            font-family: monospace;
+            font-size: 12px;
+            font-weight: 700;
+            background: #f1f5f9;
+            padding: 1px 6px;
+            border-radius: 4px;
+            color: #1e293b;
+            border: 1px solid #cbd5e1;
+        }
+
+        .quick-tips {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .tip-tag {
+            background: #f8fafc;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px dashed #cbd5e1;
+        }
+
+        /* Main Workspace Canvas Area */
+        .erd-viewport {
+            flex: 1;
+            position: relative;
+            background: #f1f5f9;
+            overflow: auto;
+            cursor: default;
+        }
+
+        .erd-viewport.is-panning {
+            cursor: grab;
+        }
+
+        .erd-viewport.is-connecting-mode {
+            cursor: crosshair;
+        }
+
+        /* Scalable SVG Canvas Holder */
+        .canvas-scale-wrapper {
+            transform-origin: 0 0;
+            min-width: 2200px;
+            min-height: 1400px;
+            padding: 40px;
+            position: relative;
+        }
+
+        #erdSvg {
+            width: 2100px;
+            height: 1350px;
+            background: var(--bg-canvas);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            display: block;
+        }
+
+        /* SVG Entity Table Styling */
+        .entity-card {
+            cursor: move;
+            transition: filter 0.15s ease;
+        }
+
+        .entity-card:hover {
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.08));
+        }
+
+        .entity-card.is-selected {
+            filter: drop-shadow(0 0 0 2px #2563eb) drop-shadow(0 6px 16px rgba(37, 99, 235, 0.18));
+        }
+
+        .entity-card.is-dragging {
+            opacity: 0.92;
+            cursor: grabbing;
+        }
+
+        /* Connection Ports */
+        .port-handle {
+            fill: #ffffff;
+            stroke: #64748b;
+            stroke-width: 2;
+            cursor: crosshair;
+            opacity: 0;
+            transition: opacity 0.15s ease, transform 0.15s ease, fill 0.15s ease;
+        }
+
+        .entity-card:hover .port-handle,
+        .entity-card.is-selected .port-handle,
+        .is-connecting-mode .port-handle {
+            opacity: 1;
+        }
+
+        .port-handle:hover {
+            fill: #2563eb;
+            stroke: #1d4ed8;
+            stroke-width: 2.5;
+            r: 7;
+        }
+
+        /* Relationship Connector Lines */
+        .rel-group {
+            cursor: pointer;
+        }
+
+        .rel-path-hitarea {
+            fill: none;
+            stroke: transparent;
+            stroke-width: 14;
+            cursor: pointer;
+        }
+
+        .rel-path-visible {
+            fill: none;
+            stroke: #475569;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: stroke 0.15s ease, stroke-width 0.15s ease;
+        }
+
+        .rel-group:hover .rel-path-visible {
+            stroke: #2563eb;
+            stroke-width: 2.4;
+        }
+
+        .rel-group.is-selected .rel-path-visible {
+            stroke: #2563eb;
+            stroke-width: 2.6;
+        }
+
+        /* Orthogonal Segment Drag Hitareas */
+        .segment-hitarea {
+            fill: none;
+            stroke: transparent;
+            stroke-width: 16;
+        }
+
+        .segment-hitarea.horizontal {
+            cursor: ns-resize;
+        }
+
+        .segment-hitarea.vertical {
+            cursor: ew-resize;
+        }
+
+        .segment-drag-pill {
+            fill: #ffffff;
+            stroke: #64748b;
+            stroke-width: 1.5;
+            opacity: 0;
+            transition: opacity 0.15s ease, fill 0.15s ease, stroke 0.15s ease;
+        }
+
+        .rel-group:hover .segment-drag-pill,
+        .rel-group.is-selected .segment-drag-pill {
+            opacity: 1;
+        }
+
+        .segment-drag-pill:hover {
+            fill: #2563eb;
+            stroke: #1d4ed8;
+        }
+
+        /* Attached Crow's Foot & Cardinality Border Handles */
+        .cardinality-border-group {
+            transition: opacity 0.15s ease;
+        }
+
+        .cardinality-border-handle {
+            fill: transparent;
+            stroke: transparent;
+        }
+
+        .cardinality-border-group:hover .cardinality-border-handle,
+        .cardinality-border-group.is-dragging .cardinality-border-handle {
+            stroke: #2563eb;
+            stroke-width: 1.5;
+            stroke-dasharray: 2, 2;
+            fill: rgba(37, 99, 235, 0.08);
+        }
+
+        .cardinality-border-group.vertical-edge {
+            cursor: ns-resize;
+        }
+
+        .cardinality-border-group.horizontal-edge {
+            cursor: ew-resize;
+        }
+
+        .cardinality-border-group.is-dragging {
+            cursor: grabbing !important;
+        }
+
+        .rel-label-box {
+            cursor: pointer;
+        }
+
+        .rel-label-rect {
+            fill: #ffffff;
+            stroke: #cbd5e1;
+            stroke-width: 1;
+            rx: 4;
+            transition: all 0.15s ease;
+        }
+
+        .rel-group:hover .rel-label-rect,
+        .rel-group.is-selected .rel-label-rect {
+            stroke: #2563eb;
+            fill: #eff6ff;
+        }
+
+        .rel-label-text {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 10px;
+            font-weight: 600;
+            fill: #475569;
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: none;
+        }
+
+        .rel-group.is-selected .rel-label-text {
+            fill: #1e40af;
+            font-weight: 700;
+        }
+
+        /* Temporary drag-to-connect line */
+        #temp-connector {
+            fill: none;
+            stroke: var(--color-primary);
+            stroke-width: 2.2;
+            stroke-dasharray: 5, 4;
+            pointer-events: none;
+        }
+
+        /* Floating Relationship Inspector / Toolbar */
+        #rel-toolbar {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ffffff;
+            border: 1px solid var(--border-card);
+            border-radius: 12px;
+            padding: 10px 18px;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.14), 0 2px 6px rgba(15, 23, 42, 0.04);
+            display: none;
+            align-items: center;
+            gap: 14px;
+            z-index: 50;
+            font-size: 12px;
+        }
+
+        .rel-tb-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .rel-tb-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .rel-entity-badge {
+            background: #f1f5f9;
+            color: var(--text-heading);
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            font-size: 11px;
+        }
+
+        .rel-tb-select {
+            padding: 4px 8px;
+            border: 1px solid var(--border-ui);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-heading);
+            background: #ffffff;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .rel-tb-select:focus {
+            border-color: var(--color-primary);
+        }
+
+        .rel-tb-preview {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 4px 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-heading);
+        }
+
+        .preview-symbols {
+            font-family: monospace;
+            font-size: 14px;
+            color: #2563eb;
+            letter-spacing: 1px;
+        }
+
+        .rel-presets-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            border-left: 1px solid var(--border-ui);
+            border-right: 1px solid var(--border-ui);
+            padding: 0 10px;
+        }
+
+        /* Toast feedback */
+        #toast-notification {
+            position: fixed;
+            top: 70px;
+            right: 24px;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+            display: none;
+            z-index: 1000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 24px;
+            width: 360px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border-ui);
+        }
+
+        .modal-card h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-heading);
+            margin-bottom: 16px;
+        }
+
+        .modal-field {
+            margin-bottom: 14px;
+        }
+
+        .modal-field label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-body);
+            margin-bottom: 6px;
+        }
+
+        .modal-field input, .modal-field select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border-ui);
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+        }
+
+        .modal-field input:focus, .modal-field select:focus {
+            border-color: var(--color-primary);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Editor Header -->
+    <header class="erd-header">
+        <div class="header-title-group">
+            <div class="brand-badge">EDUFLEX</div>
+            <div class="titles">
+                <h1>Interactive ERD Studio <span class="version-pill">Crow’s Foot Notation</span></h1>
+                <p>PostgreSQL Relational Schema &amp; Entity Relationship Diagram Editor</p>
+            </div>
+        </div>
+
+        <div class="erd-actions">
+            <!-- Edit Menu Dropdown -->
+            <div class="menu-dropdown-wrapper" id="editMenuWrapper">
+                <button class="btn" id="editMenuBtn" onclick="toggleEditMenu(event)" title="Edit Menu (Undo, Redo, Cut, Copy, Paste, Delete, Select All)">
+                    <span>✏️</span> Edit <span style="font-size: 9px; margin-left: 2px;">▼</span>
+                </button>
+                <div class="menu-dropdown-panel" id="editMenuDropdown">
+                    <button class="menu-item" id="menuUndo" onclick="undo()" title="Undo last action (Ctrl+Z)">
+                        <span class="menu-item-left"><span>↩️</span> Undo</span>
+                        <span class="menu-shortcut">Ctrl+Z</span>
+                    </button>
+                    <button class="menu-item" id="menuRedo" onclick="redo()" title="Redo last undone action (Ctrl+Y)">
+                        <span class="menu-item-left"><span>↪️</span> Redo</span>
+                        <span class="menu-shortcut">Ctrl+Y</span>
+                    </button>
+                    <div class="menu-divider"></div>
+                    <button class="menu-item" id="menuCut" onclick="cutSelected()" title="Cut selected object to clipboard (Ctrl+X)">
+                        <span class="menu-item-left"><span>✂️</span> Cut</span>
+                        <span class="menu-shortcut">Ctrl+X</span>
+                    </button>
+                    <button class="menu-item" id="menuCopy" onclick="copySelected()" title="Copy selected object to clipboard (Ctrl+C)">
+                        <span class="menu-item-left"><span>📋</span> Copy</span>
+                        <span class="menu-shortcut">Ctrl+C</span>
+                    </button>
+                    <button class="menu-item" id="menuPaste" onclick="pasteClipboard()" title="Paste object from clipboard (Ctrl+V)">
+                        <span class="menu-item-left"><span>📥</span> Paste</span>
+                        <span class="menu-shortcut">Ctrl+V</span>
+                    </button>
+                    <button class="menu-item" id="menuDelete" onclick="deleteSelected()" title="Delete selected object (Delete)">
+                        <span class="menu-item-left"><span>🗑️</span> Delete</span>
+                        <span class="menu-shortcut">Del</span>
+                    </button>
+                    <div class="menu-divider"></div>
+                    <button class="menu-item" id="menuSelectAll" onclick="selectAllEntities()" title="Select all entity tables (Ctrl+A)">
+                        <span class="menu-item-left"><span>🔲</span> Select All</span>
+                        <span class="menu-shortcut">Ctrl+A</span>
+                    </button>
+                    <button class="menu-item" id="menuSave" onclick="saveDiagramLocal()" title="Save ERD locally (Ctrl+S)">
+                        <span class="menu-item-left"><span>💾</span> Save Local</span>
+                        <span class="menu-shortcut">Ctrl+S</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick History Action Buttons -->
+            <div class="history-quick-btns">
+                <button class="btn btn-icon" id="quickUndoBtn" onclick="undo()" title="Undo (Ctrl+Z)">↩️</button>
+                <button class="btn btn-icon" id="quickRedoBtn" onclick="redo()" title="Redo (Ctrl+Y)">↪️</button>
+            </div>
+
+            <!-- Add Entity -->
+            <button class="btn" onclick="openNewEntityModal()">
+                <span>➕</span> Add Entity
+            </button>
+
+            <!-- Export High-Res PNG -->
+            <button class="btn primary export-png-btn" onclick="exportPngImage()" title="Export complete diagram as high-resolution white background PNG">
+                <span>🖼️</span> Export PNG
+            </button>
+
+            <!-- Export SQL DDL -->
+            <button class="btn" onclick="exportSqlSchema()" title="Export PostgreSQL CREATE TABLE statements">
+                <span>💾</span> Export SQL
+            </button>
+
+            <!-- Reset Schema -->
+            <button class="btn" onclick="resetDefaultEduFlexLayout()" title="Restore EduFlex default layout">
+                <span>🔄</span> Reset
+            </button>
+
+            <!-- Canvas View Controls -->
+            <div class="zoom-group">
+                <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">−</button>
+                <span class="zoom-display" id="zoomDisplay">100%</span>
+                <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">+</button>
+                <button class="zoom-btn" onclick="resetZoom()" title="Reset Zoom">1:1</button>
+                <button class="zoom-btn" onclick="fitToScreen()" title="Fit to Screen">Fit</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Secondary Legend & Guidance Bar -->
+    <div class="erd-subbar">
+        <div class="legend-items">
+            <span style="font-weight:700; color:var(--text-heading);">Legend:</span>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#2563eb;"></div>
+                <span>Student Academic Area</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#0d9488;"></div>
+                <span>Instructor / Curriculum</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#7c3aed;"></div>
+                <span>Administration / Governance</span>
+            </div>
+            <div class="legend-notation">
+                <span style="font-weight:700; color:var(--text-heading);">Notation:</span>
+                <span>ONE: <span class="notation-badge">──────┼│</span></span>
+                <span>MANY: <span class="notation-badge">──────&lt;│</span></span>
+            </div>
+        </div>
+        <div class="quick-tips">
+            <span class="tip-tag">Drag Crow’s Foot directly on entity border</span>
+            <span class="tip-tag">Drag Horizontal Line (↕) up/down</span>
+            <span class="tip-tag">Drag Vertical Line (↔) left/right</span>
+            <span class="tip-tag">Drag Port (⚪): Connect</span>
+        </div>
+    </div>
+
+    <!-- Main Viewport Canvas -->
+    <main class="erd-viewport" id="viewportCard">
+        <div class="canvas-scale-wrapper" id="canvasScaleWrapper">
+            <svg id="erdSvg" viewBox="0 0 2100 1350" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <!-- Background Subtle Dot Grid Pattern -->
+                    <pattern id="grid-dots" width="24" height="24" patternUnits="userSpaceOnUse">
+                        <circle cx="2" cy="2" r="1" fill="#e2e8f0" />
+                    </pattern>
+                </defs>
+
+                <!-- White Grid Canvas Background -->
+                <rect width="2100" height="1350" fill="#ffffff" />
+                <rect width="2100" height="1350" fill="url(#grid-dots)" />
+
+                <!-- Layer for Connectors (Lines & Crow's Foot Endpoints) -->
+                <g id="connectors-layer"></g>
+
+                <!-- Temporary connector line during port drag -->
+                <path id="temp-connector" d="M 0 0 L 0 0" style="display: none;" />
+
+                <!-- Layer for Entities (Tables, Fields, & Handles) -->
+                <g id="entities-layer"></g>
+            </svg>
+        </div>
+
+        <!-- ==========================================
+             RELATIONSHIP INSPECTOR / FLOATING TOOLBAR
+             ========================================== -->
+        <div id="rel-toolbar">
+            <div class="rel-tb-group">
+                <span class="rel-tb-label">From Entity:</span>
+                <span class="rel-entity-badge" id="rel-from-entity-name">STUDENT</span>
+            </div>
+
+            <div class="rel-tb-group">
+                <label for="rel-from-card" class="rel-tb-label">From Cardinality:</label>
+                <select class="rel-tb-select" id="rel-from-card" onchange="updateSelectedRelCardinality()">
+                    <option value="one">One (┼)</option>
+                    <option value="many">Many (&lt;)</option>
+                </select>
+            </div>
+
+            <!-- Live Diagram Preview -->
+            <div class="rel-tb-preview" id="rel-visual-preview">
+                <span id="preview-from-name">STUDENT</span>
+                <span class="preview-symbols" id="preview-symbols">┼────────&lt;</span>
+                <span id="preview-to-name">ENROLLMENT</span>
+            </div>
+
+            <div class="rel-tb-group">
+                <label for="rel-to-card" class="rel-tb-label">To Cardinality:</label>
+                <select class="rel-tb-select" id="rel-to-card" onchange="updateSelectedRelCardinality()">
+                    <option value="one">One (┼)</option>
+                    <option value="many">Many (&lt;)</option>
+                </select>
+            </div>
+
+            <div class="rel-tb-group">
+                <span class="rel-tb-label">To Entity:</span>
+                <span class="rel-entity-badge" id="rel-to-entity-name">ENROLLMENT</span>
+            </div>
+
+            <div class="rel-tb-group" style="margin-left: 4px;">
+                <span class="rel-tb-label">Label:</span>
+                <input type="text" class="rel-tb-select" style="width: 110px;" id="rel-label-input" placeholder="relates to" oninput="updateSelectedRelLabel(this.value)">
+            </div>
+
+            <!-- Quick Presets -->
+            <div class="rel-presets-group">
+                <button class="btn btn-xs" title="Set to One" onclick="applyRelPreset('one')">One</button>
+                <button class="btn btn-xs" title="Set to Many" onclick="applyRelPreset('many')">Many</button>
+                <button class="btn btn-xs" title="One to One" onclick="applyRelPreset('1:1')">1:1</button>
+                <button class="btn btn-xs" title="One to Many" onclick="applyRelPreset('1:N')">1:N</button>
+                <button class="btn btn-xs" title="Many to Many" onclick="applyRelPreset('N:M')">N:M</button>
+            </div>
+
+            <button class="btn" title="Reset Orthogonal Routing" onclick="resetSelectedRelRouting()">
+                <span>🔄</span> Reset Route
+            </button>
+
+            <button class="btn danger" id="btn-delete-rel" onclick="deleteSelectedRelationship()">
+                <span>🗑️</span> Delete Relationship
+            </button>
+        </div>
+
+        <!-- Toast Feedback Notification -->
+        <div id="toast-notification">Notification</div>
+    </main>
+
+    <!-- ==========================================
+         MODALS FOR CREATING / EDITING
+         ========================================== -->
+    <!-- New Entity Modal -->
+    <div class="modal-overlay" id="newEntityModal">
+        <div class="modal-card">
+            <h3>Add New Entity</h3>
+            <div class="modal-field">
+                <label>Table Name</label>
+                <input type="text" id="newEntityName" placeholder="e.g., DEPARTMENT" autofocus>
+            </div>
+            <div class="modal-field">
+                <label>Category Domain</label>
+                <select id="newEntityDomain">
+                    <option value="student">Student Academic Area</option>
+                    <option value="instructor" selected>Instructor / Course Curriculum</option>
+                    <option value="admin">Administration / Governance</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn" onclick="closeNewEntityModal()">Cancel</button>
+                <button class="btn primary" onclick="submitNewEntity()">Create Table</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Field Modal -->
+    <div class="modal-overlay" id="editFieldModal">
+        <div class="modal-card">
+            <h3 id="editFieldTitle">Edit Field</h3>
+            <div class="modal-field">
+                <label>Column Name</label>
+                <input type="text" id="editFieldName">
+            </div>
+            <div class="modal-field">
+                <label>Data Type</label>
+                <input type="text" id="editFieldType" placeholder="VARCHAR(100), UUID, INT, etc.">
+            </div>
+            <div class="modal-field">
+                <label>Key Constraint</label>
+                <select id="editFieldKey">
+                    <option value="">None (Standard Attribute)</option>
+                    <option value="PK">PK (Primary Key)</option>
+                    <option value="FK">FK (Foreign Key Reference)</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn" onclick="closeEditFieldModal()">Cancel</button>
+                <button class="btn primary" onclick="submitEditField()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         CORE APPLICATION ENGINE JAVASCRIPT
+         ========================================== -->
+    <script>
+        // Initial EduFlex Entity Definitions
+        const initialEntities = {
+            'student': {
+                id: 'student',
+                title: 'STUDENT',
+                domain: 'student',
+                badge: 'ACTOR',
+                color: '#2563eb',
+                x: 70, y: 110, w: 260,
+                fields: [
+                    { id: 'f1', key: 'PK', name: 'student_id', type: 'UUID' },
+                    { id: 'f2', key: '', name: 'student_number', type: 'VARCHAR(20)' },
+                    { id: 'f3', key: '', name: 'full_name', type: 'VARCHAR(100)' },
+                    { id: 'f4', key: '', name: 'email', type: 'VARCHAR(150)' },
+                    { id: 'f5', key: '', name: 'status', type: 'VARCHAR(20)' },
+                    { id: 'f6', key: '', name: 'created_at', type: 'TIMESTAMP' }
+                ]
+            },
+            'enrollment': {
+                id: 'enrollment',
+                title: 'ENROLLMENT',
+                domain: 'student',
+                badge: 'RELATION',
+                color: '#0284c7',
+                x: 390, y: 110, w: 260,
+                fields: [
+                    { id: 'f1', key: 'PK', name: 'enrollment_id', type: 'UUID' },
+                    { id: 'f2', key: 'FK', name: 'student_id', type: 'UUID' },
+                    { id: 'f3', key: 'FK', name: 'course_id', type: 'UUID' },
+                    { id: 'f4', key: '', name: 'enrolled_at', type: 'TIMESTAMP' },
+                    { id: 'f5', key: '', name: 'status', type: 'VARCHAR(20)' }
+                ]
+            },
+            'course': {
+                id: 'course',
+                title: 'COURSE',
+                domain: 'instructor',
+                badge: 'CORE HUB',
+                color: '#0d9488',
+                x: 730, y: 90, w: 270,
+                fields: [
+                    { id: 'f1', key: 'PK', name: 'course_id', type: 'UUID' },
+                    { id: 'f2', key: '', name: 'course_code', type: 'VARCHAR(20)' },
+                    { id: 'f3', key: '', name: 'course_name', type: 'VARCHAR(150)' },
+                    { id: 'f4', key: '', name: 'description', type: 'TEXT' },
+                    { id: 'f5', key: '', name: 'credits', type: 'INT' },
+                    { id: 'f6', key: '', name: 'semester', type: 'VARCHAR(20)' },
+                    { id: 'f7', key: 'FK', name: 'instructor_id', type: 'UUID' },
+                    { id: 'f8', key: '', name: 'created_at', type: 'TIMESTAMP' }
+                ]
+            },
+            'instructor': {
+                id: 'instructor',
+                title: 'INSTRUCTOR',
+                domain: 'instructor',
+                badge: 'ACTOR',
+                color: '#059669',
+                x: 1080, y: 110, w: 260,
+                fields: [
+                    { id: 'f1', key: 'PK', name: 'instructor_id', type: 'UUID' },
+                    { id: 'f2', key: '', name: 'staff_number', type: 'VARCHAR(20)' },
+                    { id: 'f3', key: '', name: 'full_name', type: 'VARCHAR(100)' },
+                    { id: 'f4', key: '', name: 'email', type: 'VARCHAR(150)' },
+                    { id: 'f5', key: '', name: 'status', type: 'VARCHAR(20)' }
+                ]
+            },
+            'admin': {
+                id: 'admin',
+                title: 'ADMIN',
+                domain: 'admin',
+                badge: 'GOVERNANCE',
+                color: '#7c3aed',
+                x: 1440, y: 110, w: 250,
+                fields: [
+                    { id: 'f1', key: 'PK', name: 'admin_id', type: 'UUID' },
+                    { id: 'f2', key: '', name: 'full_name', type: 'VARCHAR(100)' },
+                    { id: 'f3', key: '', name: 'email', type: 'VARCHAR(150)' },
+                    { id: 'f4', key: '', name: 'status', type: 'VARCHAR(20)' }
+                ]
+            },
+            'assignment': {
+                id: 'assignment',
+                title: 'ASSIGNMENT',
+                domain: 'instructor',
+                badge: 'ACTIVITY',
+                color: '#334155',
+                x: 390, y: 470, w: 260,
+                fields: [
+                    { id: 'f1', key: 'PK', name: 'assignment_id', type: 'UUID' },
+                    { id: 'f2', key: 'FK', name: 'course_id', type: 'UUID' },
+                    { id: 'f3', key: '', name: 'title', type: 'VARCHAR(150)' },
+                    { id: 'f4', key: '', name: 'description', type: 'TEXT' },
+                    { id: 'f5', key: '', name: 'due_date', type: 'TIMESTAMP' },
+                    { id: 'f6', key: '', name: 'max_score', type: 'INT' },
+                    { id: 'f7', key: '', name: 'created_at', type: 'TIMESTAMP' }
+                ]
+            },
+            'quiz': {
+                id: 'quiz',
+                title: 'QUIZ',
+                domain: 'instructor',
+                badge: 'ACTIVITY',
+                color: '#334155',
+                x: 735, y: 470, w: 260,
+                fields: [
+                    { id: 'f1', key: 'PK', name: 'quiz_id', type: 'UUID' },
+                    { id: 'f2', key: 'FK', name: 'course_id', type: 'UUID' },
+                    { id: 'f3', key: '', name: 'title', type: 'VARCHAR(150)' },
+                    { id: 'f4', key: '', name: 'description', type: 'TEXT' },
+                    { id: 'f5', key: '', name: 'start_time', type: 'TIMESTAMP' },
+                    { id: 'f6', key: '', name: 'end_time', type: 'TIMESTAMP' },
+                    { id: 'f7', key: '', name: 'max_score', type: 'INT' }
+                ]
+            },
+            'learning_material': {
+                id: 'learning_material',
+                title: 'LEARNING_MATERIAL',
+                domain: 'instructor',
+                badge: 'CONTENT',
+                color: '#334155',
+                x: 1080, y: 470, w: 260,
+                fields: [
+                    { id: 'f1', key: 'PK', name: 'material_id', type: 'UUID' },
+                    { id: 'f2', key: 'FK', name: 'course_id', type: 'UUID' },
+                    { id: 'f3', key: '', name: 'title', type: 'VARCHAR(150)' },
+                    { id: 'f4', key: '', name: 'material_type', type: 'VARCHAR(30)' },
+                    { id: 'f5', key: '', name: 'file_url', type: 'VARCHAR(255)' },
+                    { id: 'f6', key: '', name: 'uploaded_at', type: 'TIMESTAMP' }
+                ]
+            },
+            'announcement': {
+                id: 'announcement',
+                title: 'ANNOUNCEMENT',
+                domain: 'admin',
+                badge: 'COMMUNICATION',
+                color: '#7c3aed',
+                x: 1440, y: 470, w: 260,
+                fields: [
+                    { id: 'f1', key: 'PK', name: 'announcement_id', type: 'UUID' },
+                    { id: 'f2', key: 'FK', name: 'course_id', type: 'UUID' },
+                    { id: 'f3', key: 'FK', name: 'author_id', type: 'UUID' },
+                    { id: 'f4', key: '', name: 'title', type: 'VARCHAR(150)' },
+                    { id: 'f5', key: '', name: 'message', type: 'TEXT' },
+                    { id: 'f6', key: '', name: 'published_at', type: 'TIMESTAMP' }
+                ]
+            },
+            'submission': {
+                id: 'submission',
+                title: 'SUBMISSION',
+                domain: 'student',
+                badge: 'STUDENT ARTIFACT',
+                color: '#2563eb',
+                x: 390, y: 830, w: 260,
+                fields: [
+                    { id: 'f1', key: 'PK', name: 'submission_id', type: 'UUID' },
+                    { id: 'f2', key: 'FK', name: 'assignment_id', type: 'UUID' },
+                    { id: 'f3', key: 'FK', name: 'student_id', type: 'UUID' },
+                    { id: 'f4', key: '', name: 'file_url', type: 'VARCHAR(255)' },
+                    { id: 'f5', key: '', name: 'submitted_at', type: 'TIMESTAMP' },
+                    { id: 'f6', key: '', name: 'score', type: 'DECIMAL' },
+                    { id: 'f7', key: '', name: 'feedback', type: 'TEXT' },
+                    { id: 'f8', key: '', name: 'status', type: 'VARCHAR(20)' }
+                ]
+            },
+            'quiz_attempt': {
+                id: 'quiz_attempt',
+                title: 'QUIZ_ATTEMPT',
+                domain: 'student',
+                badge: 'STUDENT ARTIFACT',
+                color: '#2563eb',
+                x: 735, y: 830, w: 260,
+                fields: [
+                    { id: 'f1', key: 'PK', name: 'attempt_id', type: 'UUID' },
+                    { id: 'f2', key: 'FK', name: 'quiz_id', type: 'UUID' },
+                    { id: 'f3', key: 'FK', name: 'student_id', type: 'UUID' },
+                    { id: 'f4', key: '', name: 'score', type: 'DECIMAL' },
+                    { id: 'f5', key: '', name: 'started_at', type: 'TIMESTAMP' },
+                    { id: 'f6', key: '', name: 'submitted_at', type: 'TIMESTAMP' }
+                ]
+            },
+            'question': {
+                id: 'question',
+                title: 'QUESTION',
+                domain: 'instructor',
+                badge: 'ITEM BANK',
+                color: '#334155',
+                x: 1080, y: 830, w: 260,
+                fields: [
+                    { id: 'f1', key: 'PK', name: 'question_id', type: 'UUID' },
+                    { id: 'f2', key: 'FK', name: 'quiz_id', type: 'UUID' },
+                    { id: 'f3', key: '', name: 'question_text', type: 'TEXT' },
+                    { id: 'f4', key: '', name: 'question_type', type: 'VARCHAR(30)' },
+                    { id: 'f5', key: '', name: 'marks', type: 'INT' }
+                ]
+            }
+        };
+
+        const initialRelationships = [
+            { id: 'rel-student-enrollment', from: 'student', to: 'enrollment', fromCard: 'one', toCard: 'many', label: 'enrolls in', fromPort: 'right', toPort: 'left' },
+            { id: 'rel-course-enrollment', from: 'course', to: 'enrollment', fromCard: 'one', toCard: 'many', label: 'enrolls', fromPort: 'left', toPort: 'right' },
+            { id: 'rel-instructor-course', from: 'instructor', to: 'course', fromCard: 'one', toCard: 'many', label: 'teaches', fromPort: 'left', toPort: 'right' },
+            { id: 'rel-course-assignment', from: 'course', to: 'assignment', fromCard: 'one', toCard: 'many', label: 'contains', fromPort: 'bottom', toPort: 'top' },
+            { id: 'rel-course-quiz', from: 'course', to: 'quiz', fromCard: 'one', toCard: 'many', label: 'conducts', fromPort: 'bottom', toPort: 'top' },
+            { id: 'rel-course-material', from: 'course', to: 'learning_material', fromCard: 'one', toCard: 'many', label: 'provides', fromPort: 'bottom', toPort: 'top' },
+            { id: 'rel-course-announcement', from: 'course', to: 'announcement', fromCard: 'one', toCard: 'many', label: 'broadcasts', fromPort: 'right', toPort: 'left' },
+            { id: 'rel-admin-announcement', from: 'admin', to: 'announcement', fromCard: 'one', toCard: 'many', label: 'publishes', fromPort: 'bottom', toPort: 'top' },
+            { id: 'rel-assignment-submission', from: 'assignment', to: 'submission', fromCard: 'one', toCard: 'many', label: 'receives', fromPort: 'bottom', toPort: 'top' },
+            { id: 'rel-student-submission', from: 'student', to: 'submission', fromCard: 'one', toCard: 'many', label: 'submits', fromPort: 'bottom', toPort: 'left' },
+            { id: 'rel-student-attempt', from: 'student', to: 'quiz_attempt', fromCard: 'one', toCard: 'many', label: 'attempts', fromPort: 'bottom', toPort: 'left' },
+            { id: 'rel-quiz-attempt', from: 'quiz', to: 'quiz_attempt', fromCard: 'one', toCard: 'many', label: 'records', fromPort: 'bottom', toPort: 'top' },
+            { id: 'rel-question-quiz', from: 'question', to: 'quiz', fromCard: 'many', toCard: 'one', label: 'belongs to', fromPort: 'top', toPort: 'bottom' },
+            { id: 'rel-admin-enrollment', from: 'admin', to: 'enrollment', fromCard: 'one', toCard: 'many', label: 'administers', fromPort: 'top', toPort: 'top' }
+        ];
+
+        // Deep clone state
+        let entities = JSON.parse(JSON.stringify(initialEntities));
+        let relationships = JSON.parse(JSON.stringify(initialRelationships));
+        window.entities = entities;
+        window.relationships = relationships;
+
+        // History & Undo/Redo State
+        let history = [];
+        let historyIndex = -1;
+        const MAX_HISTORY = 50;
+
+        // Clipboard State
+        let clipboard = null; // { type: 'entity' | 'relationship', data: any }
+
+        // State variables
+        let selectedEntityId = null;
+        let selectedEntityIds = new Set();
+        let selectedRelId = null;
+        let editingEntityId = null;
+        let editingFieldIdx = null;
+
+        // Drag start snapshot for history diffing
+        let dragStartSnapshot = null;
+
+        // Viewport Zoom & Pan State
+        let currentZoom = 1.0;
+        const minZoom = 0.4;
+        const maxZoom = 2.0;
+        let isPanning = false;
+        let panStart = { x: 0, y: 0 };
+        let scrollStart = { left: 0, top: 0 };
+
+        // SVG & Viewport DOM References
+        const svgEl = document.getElementById('erdSvg');
+        const entitiesLayer = document.getElementById('entities-layer');
+        const connectorsLayer = document.getElementById('connectors-layer');
+        const tempConnector = document.getElementById('temp-connector');
+        const viewport = document.getElementById('viewportCard');
+        const scaleWrapper = document.getElementById('canvasScaleWrapper');
+        const zoomDisplay = document.getElementById('zoomDisplay');
+        const relToolbar = document.getElementById('rel-toolbar');
+        const toastNotification = document.getElementById('toast-notification');
+
+        // Drag State for Entities
+        let isDraggingEntity = false;
+        let draggedEntityId = null;
+        let dragOffset = { x: 0, y: 0 };
+
+        // Drag State for Cardinality Symbol on Entity Border
+        let isDraggingBorderSymbol = false;
+        let draggedBorderRelId = null;
+        let draggedBorderEnd = null; // 'from' or 'to'
+
+        // Drag State for Orthogonal Connector Segments (Horizontal or Vertical)
+        let isDraggingSegment = false;
+        let draggedSegmentRelId = null;
+        let draggedSegmentIdx = null; // index of segment in path vertices
+        let isSegmentHorizontal = false;
+
+        // Connect State (drag port to port/entity)
+        let isConnecting = false;
+        let connectSource = { entityId: null, port: null };
+        let hoveredTargetEntityId = null;
+
+        function showToast(msg) {
+            toastNotification.textContent = msg;
+            toastNotification.style.display = 'block';
+            clearTimeout(toastNotification._timer);
+            toastNotification._timer = setTimeout(() => {
+                toastNotification.style.display = 'none';
+            }, 3000);
+        }
+
+        /**
+         * Convert Client Screen Coordinates to SVG Canvas Coordinates
+         */
+        function screenToSvgCoords(clientX, clientY) {
+            const pt = svgEl.createSVGPoint();
+            pt.x = clientX;
+            pt.y = clientY;
+            return pt.matrixTransform(svgEl.getScreenCTM().inverse());
+        }
+
+        /**
+         * Calculate Dynamic Entity Height based on row count
+         */
+        function calculateTableHeight(ent) {
+            const headerHeight = 38;
+            const fieldHeight = 24;
+            const footerHeight = 28;
+            return headerHeight + (ent.fields.length * fieldHeight) + footerHeight;
+        }
+
+        /**
+         * Render All Entities in SVG
+         */
+        function renderEntities() {
+            entitiesLayer.innerHTML = '';
+
+            Object.values(entities).forEach(ent => {
+                ent.h = calculateTableHeight(ent);
+
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('class', 'entity-card' + (selectedEntityId === ent.id ? ' is-selected' : ''));
+                g.setAttribute('id', 'node-' + ent.id);
+                g.setAttribute('data-id', ent.id);
+                g.setAttribute('transform', `translate(${ent.x}, ${ent.y})`);
+
+                // Main Table Outer Container
+                const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                bgRect.setAttribute('width', ent.w);
+                bgRect.setAttribute('height', ent.h);
+                bgRect.setAttribute('rx', '8');
+                bgRect.setAttribute('fill', '#ffffff');
+                bgRect.setAttribute('stroke', selectedEntityId === ent.id ? '#2563eb' : '#cbd5e1');
+                bgRect.setAttribute('stroke-width', selectedEntityId === ent.id ? '2' : '1');
+                g.appendChild(bgRect);
+
+                // Table Header Background
+                const headerRect = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                headerRect.setAttribute('d', `M 0 8 Q 0 0 8 0 L ${ent.w - 8} 0 Q ${ent.w} 0 ${ent.w} 8 L ${ent.w} 38 L 0 38 Z`);
+                headerRect.setAttribute('fill', ent.color);
+                g.appendChild(headerRect);
+
+                // Table Title (Double-click to rename)
+                const titleText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                titleText.setAttribute('x', '12');
+                titleText.setAttribute('y', '24');
+                titleText.setAttribute('font-family', 'sans-serif');
+                titleText.setAttribute('font-size', '13');
+                titleText.setAttribute('font-weight', '800');
+                titleText.setAttribute('fill', '#ffffff');
+                titleText.setAttribute('letter-spacing', '0.5');
+                titleText.textContent = ent.title;
+                titleText.style.cursor = 'text';
+                titleText.title = 'Double-click to rename table';
+                titleText.ondblclick = (e) => {
+                    e.stopPropagation();
+                    renameEntity(ent.id);
+                };
+                g.appendChild(titleText);
+
+                // Quick Edit Icon next to title
+                const editTitleBtn = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                editTitleBtn.setAttribute('x', ent.w - 48);
+                editTitleBtn.setAttribute('y', '23');
+                editTitleBtn.setAttribute('font-size', '11');
+                editTitleBtn.setAttribute('fill', '#ffffff');
+                editTitleBtn.setAttribute('opacity', '0.7');
+                editTitleBtn.style.cursor = 'pointer';
+                editTitleBtn.textContent = '✏️';
+                editTitleBtn.title = 'Rename entity';
+                editTitleBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    renameEntity(ent.id);
+                };
+                g.appendChild(editTitleBtn);
+
+                // Table Delete Button in Header
+                const deleteBtn = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                deleteBtn.setAttribute('x', ent.w - 22);
+                deleteBtn.setAttribute('y', '23');
+                deleteBtn.setAttribute('font-size', '12');
+                deleteBtn.setAttribute('fill', '#ffffff');
+                deleteBtn.setAttribute('opacity', '0.8');
+                deleteBtn.style.cursor = 'pointer';
+                deleteBtn.textContent = '🗑️';
+                deleteBtn.title = 'Delete table';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteEntity(ent.id);
+                };
+                g.appendChild(deleteBtn);
+
+                // Field Rows
+                let curY = 38;
+                ent.fields.forEach((f, idx) => {
+                    const rowG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    rowG.setAttribute('class', 'field-row');
+                    rowG.style.cursor = 'pointer';
+                    rowG.title = 'Double-click to edit; Click PK/FK to toggle key';
+
+                    // Zebra striping background
+                    const rowBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    rowBg.setAttribute('x', '1');
+                    rowBg.setAttribute('y', curY);
+                    rowBg.setAttribute('width', ent.w - 2);
+                    rowBg.setAttribute('height', '24');
+                    rowBg.setAttribute('fill', idx % 2 === 0 ? '#ffffff' : '#f8fafc');
+                    rowG.appendChild(rowBg);
+
+                    // Key Badge (PK / FK / None)
+                    const keyG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    keyG.onclick = (e) => {
+                        e.stopPropagation();
+                        toggleFieldKey(ent.id, idx);
+                    };
+
+                    if (f.key === 'PK') {
+                        const pkBadge = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        pkBadge.setAttribute('x', '10');
+                        pkBadge.setAttribute('y', curY + 4);
+                        pkBadge.setAttribute('width', '24');
+                        pkBadge.setAttribute('height', '16');
+                        pkBadge.setAttribute('rx', '3');
+                        pkBadge.setAttribute('fill', '#fef3c7');
+                        pkBadge.setAttribute('stroke', '#f59e0b');
+                        pkBadge.setAttribute('stroke-width', '1');
+                        keyG.appendChild(pkBadge);
+
+                        const pkText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        pkText.setAttribute('x', '22');
+                        pkText.setAttribute('y', curY + 16);
+                        pkText.setAttribute('font-family', 'sans-serif');
+                        pkText.setAttribute('font-size', '9');
+                        pkText.setAttribute('font-weight', '800');
+                        pkText.setAttribute('fill', '#b45309');
+                        pkText.setAttribute('text-anchor', 'middle');
+                        pkText.textContent = 'PK';
+                        keyG.appendChild(pkText);
+                    } else if (f.key === 'FK') {
+                        const fkBadge = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        fkBadge.setAttribute('x', '10');
+                        fkBadge.setAttribute('y', curY + 4);
+                        fkBadge.setAttribute('width', '24');
+                        fkBadge.setAttribute('height', '16');
+                        fkBadge.setAttribute('rx', '3');
+                        fkBadge.setAttribute('fill', '#e0f2fe');
+                        fkBadge.setAttribute('stroke', '#0284c7');
+                        fkBadge.setAttribute('stroke-width', '1');
+                        keyG.appendChild(fkBadge);
+
+                        const fkText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        fkText.setAttribute('x', '22');
+                        fkText.setAttribute('y', curY + 16);
+                        fkText.setAttribute('font-family', 'sans-serif');
+                        fkText.setAttribute('font-size', '9');
+                        fkText.setAttribute('font-weight', '800');
+                        fkText.setAttribute('fill', '#0369a1');
+                        fkText.setAttribute('text-anchor', 'middle');
+                        fkText.textContent = 'FK';
+                        keyG.appendChild(fkText);
+                    } else {
+                        const emptyDot = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        emptyDot.setAttribute('x', '22');
+                        emptyDot.setAttribute('y', curY + 16);
+                        emptyDot.setAttribute('font-size', '10');
+                        emptyDot.setAttribute('fill', '#94a3b8');
+                        emptyDot.setAttribute('text-anchor', 'middle');
+                        emptyDot.textContent = '•';
+                        keyG.appendChild(emptyDot);
+                    }
+                    rowG.appendChild(keyG);
+
+                    // Field Name
+                    const fieldName = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    fieldName.setAttribute('x', '42');
+                    fieldName.setAttribute('y', curY + 16);
+                    fieldName.setAttribute('font-family', 'monospace');
+                    fieldName.setAttribute('font-size', '11');
+                    fieldName.setAttribute('font-weight', f.key === 'PK' ? '700' : '500');
+                    fieldName.setAttribute('fill', f.key === 'PK' ? '#0f172a' : '#334155');
+                    fieldName.textContent = f.name;
+                    rowG.appendChild(fieldName);
+
+                    // Field Data Type
+                    const fieldType = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    fieldType.setAttribute('x', ent.w - 28);
+                    fieldType.setAttribute('y', curY + 16);
+                    fieldType.setAttribute('font-family', 'monospace');
+                    fieldType.setAttribute('font-size', '10');
+                    fieldType.setAttribute('fill', '#64748b');
+                    fieldType.setAttribute('text-anchor', 'end');
+                    fieldType.textContent = f.type;
+                    rowG.appendChild(fieldType);
+
+                    // Field Delete Button (×)
+                    const delFieldBtn = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    delFieldBtn.setAttribute('class', 'field-delete-btn');
+                    delFieldBtn.setAttribute('x', ent.w - 12);
+                    delFieldBtn.setAttribute('y', curY + 16);
+                    delFieldBtn.setAttribute('font-size', '13');
+                    delFieldBtn.setAttribute('font-weight', '700');
+                    delFieldBtn.setAttribute('fill', '#ef4444');
+                    delFieldBtn.setAttribute('text-anchor', 'middle');
+                    delFieldBtn.textContent = '×';
+                    delFieldBtn.title = 'Delete field';
+                    delFieldBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        deleteField(ent.id, idx);
+                    };
+                    rowG.appendChild(delFieldBtn);
+
+                    // Double-click row to edit field details
+                    rowG.ondblclick = (e) => {
+                        e.stopPropagation();
+                        openEditFieldModal(ent.id, idx);
+                    };
+
+                    g.appendChild(rowG);
+                    curY += 24;
+                });
+
+                // Bottom '+ Add Field' Action Row
+                const addFieldG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                addFieldG.setAttribute('class', 'add-field-btn');
+                addFieldG.style.cursor = 'pointer';
+                const addFieldY = ent.h - 22;
+
+                const addBtnRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                addBtnRect.setAttribute('x', '8');
+                addBtnRect.setAttribute('y', addFieldY);
+                addBtnRect.setAttribute('width', ent.w - 16);
+                addBtnRect.setAttribute('height', '18');
+                addBtnRect.setAttribute('rx', '4');
+                addBtnRect.setAttribute('fill', '#f8fafc');
+                addBtnRect.setAttribute('stroke', '#e2e8f0');
+                addFieldG.appendChild(addBtnRect);
+
+                const addBtnText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                addBtnText.setAttribute('x', ent.w / 2);
+                addBtnText.setAttribute('y', addFieldY + 12);
+                addBtnText.setAttribute('font-family', 'sans-serif');
+                addBtnText.setAttribute('font-size', '10');
+                addBtnText.setAttribute('font-weight', '600');
+                addBtnText.setAttribute('fill', '#64748b');
+                addBtnText.setAttribute('text-anchor', 'middle');
+                addBtnText.textContent = '+ Add Field';
+                addFieldG.appendChild(addBtnText);
+
+                addFieldG.onclick = (e) => {
+                    e.stopPropagation();
+                    addNewField(ent.id);
+                };
+                g.appendChild(addFieldG);
+
+                // 4 Connection Port Handles (Top, Bottom, Left, Right)
+                const ports = [
+                    { name: 'top', cx: ent.w / 2, cy: 0 },
+                    { name: 'bottom', cx: ent.w / 2, cy: ent.h },
+                    { name: 'left', cx: 0, cy: ent.h / 2 },
+                    { name: 'right', cx: ent.w, cy: ent.h / 2 }
+                ];
+
+                ports.forEach(p => {
+                    const portCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    portCircle.setAttribute('class', 'port-handle');
+                    portCircle.setAttribute('cx', p.cx);
+                    portCircle.setAttribute('cy', p.cy);
+                    portCircle.setAttribute('r', '5.5');
+                    portCircle.setAttribute('data-entity', ent.id);
+                    portCircle.setAttribute('data-port', p.name);
+                    portCircle.title = 'Drag to connect to another table';
+
+                    portCircle.onmousedown = (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        startConnecting(ent.id, p.name, e);
+                    };
+
+                    g.appendChild(portCircle);
+                });
+
+                // Mouse down on card initiates entity drag
+                g.onmousedown = (e) => {
+                    if (e.target.closest('.port-handle') || e.target.closest('.field-delete-btn') || e.target.closest('.add-field-btn')) return;
+                    e.stopPropagation();
+                    selectEntity(ent.id, e);
+                    startDraggingEntity(ent.id, e);
+                };
+
+                entitiesLayer.appendChild(g);
+            });
+        }
+
+        /**
+         * Get exact coordinates directly on the entity border
+         * Supports custom edge offset along the border
+         */
+        function getEdgeCoords(entId, portName, customOffset) {
+            const ent = entities[entId];
+            if (!ent) return { x: 0, y: 0 };
+            const h = ent.h || calculateTableHeight(ent);
+
+            // Default offset if none set: middle of that edge
+            let offY = (customOffset !== undefined && customOffset !== null)
+                ? Math.max(20, Math.min(h - 10, customOffset))
+                : Math.round(h / 2);
+            let offX = (customOffset !== undefined && customOffset !== null)
+                ? Math.max(20, Math.min(ent.w - 20, customOffset))
+                : Math.round(ent.w / 2);
+
+            switch (portName) {
+                case 'top': return { x: ent.x + offX, y: ent.y };
+                case 'bottom': return { x: ent.x + offX, y: ent.y + h };
+                case 'left': return { x: ent.x, y: ent.y + offY };
+                case 'right': return { x: ent.x + ent.w, y: ent.y + offY };
+                default: return { x: ent.x + offX, y: ent.y + offY };
+            }
+        }
+
+        /**
+         * Calculate optimal nearest ports between two entities
+         */
+        function getOptimalPorts(fromEntId, toEntId) {
+            const fromEnt = entities[fromEntId];
+            const toEnt = entities[toEntId];
+            if (!fromEnt || !toEnt) return { fromPort: 'right', toPort: 'left' };
+
+            const fromH = fromEnt.h || calculateTableHeight(fromEnt);
+            const toH = toEnt.h || calculateTableHeight(toEnt);
+
+            const fromCenter = { x: fromEnt.x + fromEnt.w / 2, y: fromEnt.y + fromH / 2 };
+            const toCenter = { x: toEnt.x + toEnt.w / 2, y: toEnt.y + toH / 2 };
+
+            const dx = toCenter.x - fromCenter.x;
+            const dy = toCenter.y - fromCenter.y;
+
+            if (Math.abs(dx) > Math.abs(dy) * 1.15) {
+                return dx > 0 ? { fromPort: 'right', toPort: 'left' } : { fromPort: 'left', toPort: 'right' };
+            } else if (Math.abs(dy) > Math.abs(dx) * 1.15) {
+                return dy > 0 ? { fromPort: 'bottom', toPort: 'top' } : { fromPort: 'top', toPort: 'bottom' };
+            } else {
+                if (dx > 0 && dy > 0) return { fromPort: 'bottom', toPort: 'left' };
+                if (dx > 0 && dy < 0) return { fromPort: 'top', toPort: 'left' };
+                if (dx < 0 && dy > 0) return { fromPort: 'bottom', toPort: 'right' };
+                return { fromPort: 'top', toPort: 'right' };
+            }
+        }
+
+        /**
+         * Compute default orthogonal bends between two endpoints
+         */
+        function computeDefaultBends(p1, p2, port1, port2) {
+            // Case 1: Both horizontal ports (left/right to left/right)
+            if ((port1 === 'right' || port1 === 'left') && (port2 === 'left' || port2 === 'right')) {
+                const midX = Math.round((p1.x + p2.x) / 2);
+                return [ { x: midX, y: p1.y }, { x: midX, y: p2.y } ];
+            }
+            // Case 2: Both vertical ports (bottom/top to top/bottom)
+            if ((port1 === 'bottom' || port1 === 'top') && (port2 === 'top' || port2 === 'bottom')) {
+                if (port1 === 'top' && port2 === 'top') {
+                    const minY = Math.min(p1.y, p2.y) - 50;
+                    return [ { x: p1.x, y: minY }, { x: p2.x, y: minY } ];
+                }
+                if (port1 === 'bottom' && port2 === 'bottom') {
+                    const maxY = Math.max(p1.y, p2.y) + 50;
+                    return [ { x: p1.x, y: maxY }, { x: p2.x, y: maxY } ];
+                }
+                const midY = Math.round((p1.y + p2.y) / 2);
+                return [ { x: p1.x, y: midY }, { x: p2.x, y: midY } ];
+            }
+            // Case 3: Vertical to Horizontal (e.g. bottom -> left, as in Requirement 3 diagram)
+            if (port1 === 'bottom' || port1 === 'top') {
+                const midY = Math.round((p1.y + p2.y) / 2);
+                const midX = Math.round((p1.x + p2.x) / 2);
+                return [
+                    { x: p1.x, y: midY },
+                    { x: midX, y: midY },
+                    { x: midX, y: p2.y }
+                ];
+            }
+            // Case 4: Horizontal to Vertical (e.g. right -> top)
+            const midX = Math.round((p1.x + p2.x) / 2);
+            const midY = Math.round((p1.y + p2.y) / 2);
+            return [
+                { x: midX, y: p1.y },
+                { x: midX, y: midY },
+                { x: p2.x, y: midY }
+            ];
+        }
+
+        /**
+         * Ensure Orthogonal Continuity when endpoints or bends change
+         */
+        function ensureOrthogonalContinuity(p1, p2, port1, port2, bends) {
+            if (!bends || bends.length === 0) return;
+
+            // Align first bend to p1
+            if (port1 === 'left' || port1 === 'right') {
+                bends[0].y = p1.y; // First segment is horizontal
+            } else {
+                bends[0].x = p1.x; // First segment is vertical
+            }
+
+            // Align last bend to p2
+            const lastIdx = bends.length - 1;
+            if (port2 === 'left' || port2 === 'right') {
+                bends[lastIdx].y = p2.y; // Last segment is horizontal
+            } else {
+                bends[lastIdx].x = p2.x; // Last segment is vertical
+            }
+
+            // Internal segment continuity
+            if (bends.length === 3) {
+                if (port1 === 'bottom' || port1 === 'top') {
+                    // Seg 1 is horizontal: bends[0].y === bends[1].y
+                    bends[0].y = bends[1].y;
+                    // Seg 2 is vertical: bends[1].x === bends[2].x
+                    bends[2].x = bends[1].x;
+                } else {
+                    // Seg 1 is vertical: bends[0].x === bends[1].x
+                    bends[0].x = bends[1].x;
+                    // Seg 2 is horizontal: bends[1].y === bends[2].y
+                    bends[2].y = bends[1].y;
+                }
+            } else if (bends.length === 2) {
+                if (port1 === 'left' || port1 === 'right') {
+                    bends[1].x = bends[0].x;
+                } else {
+                    bends[1].y = bends[0].y;
+                }
+            }
+        }
+
+        /**
+         * Get full list of vertices [ P1, Bends..., P2 ] for a relationship
+         */
+        function getRelationshipVertices(rel) {
+            const fromEnt = entities[rel.from];
+            const toEnt = entities[rel.to];
+            if (!fromEnt || !toEnt) return [];
+
+            const ports = (rel.fromPort && rel.toPort)
+                ? { fromPort: rel.fromPort, toPort: rel.toPort }
+                : getOptimalPorts(rel.from, rel.to);
+
+            rel.fromPort = ports.fromPort;
+            rel.toPort = ports.toPort;
+
+            const p1 = getEdgeCoords(rel.from, ports.fromPort, rel.fromOffset);
+            const p2 = getEdgeCoords(rel.to, ports.toPort, rel.toOffset);
+
+            if (!rel.bends || rel.bends.length === 0) {
+                rel.bends = computeDefaultBends(p1, p2, ports.fromPort, ports.toPort);
+            }
+
+            ensureOrthogonalContinuity(p1, p2, ports.fromPort, ports.toPort, rel.bends);
+
+            return [ p1, ...rel.bends, p2 ];
+        }
+
+        /**
+         * Render Open 3-Stroke Crow’s Foot (<) or One Bar (┼)
+         * Attached PHYSICALLY to the entity box border (Zero gap!)
+         */
+        function renderAttachedCardinalitySymbol(type, pt, portName, orientation, color, isSelected) {
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            const isVerticalEdge = (portName === 'left' || portName === 'right');
+            g.setAttribute('class', `cardinality-border-group ${isVerticalEdge ? 'vertical-edge' : 'horizontal-edge'}` + (isSelected ? ' is-selected' : ''));
+
+            const { x, y } = pt;
+
+            if (type === 'one') {
+                // ONE: A straight line ending at the entity border, crossed by a perpendicular bar (┼│)
+                const barLength = 9;
+                const strokeW = isSelected ? '2.8' : '2.2';
+
+                if (isVerticalEdge) {
+                    const dir = (portName === 'left') ? -1 : 1;
+                    const barX = x + dir * 6;
+                    // Perpendicular vertical bar
+                    const bar = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    bar.setAttribute('x1', barX);
+                    bar.setAttribute('y1', y - barLength);
+                    bar.setAttribute('x2', barX);
+                    bar.setAttribute('y2', y + barLength);
+                    bar.setAttribute('stroke', color);
+                    bar.setAttribute('stroke-width', strokeW);
+                    bar.setAttribute('stroke-linecap', 'round');
+                    bar.setAttribute('fill', 'none');
+                    g.appendChild(bar);
+
+                    // Connector line entering/leaving border
+                    const stem = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    stem.setAttribute('x1', x + dir * 14);
+                    stem.setAttribute('y1', y);
+                    stem.setAttribute('x2', x);
+                    stem.setAttribute('y2', y);
+                    stem.setAttribute('stroke', color);
+                    stem.setAttribute('stroke-width', isSelected ? '2.4' : '1.8');
+                    stem.setAttribute('stroke-linecap', 'round');
+                    stem.setAttribute('fill', 'none');
+                    g.appendChild(stem);
+                } else {
+                    const dir = (portName === 'top') ? -1 : 1;
+                    const barY = y + dir * 6;
+                    // Perpendicular horizontal bar
+                    const bar = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    bar.setAttribute('x1', x - barLength);
+                    bar.setAttribute('y1', barY);
+                    bar.setAttribute('x2', x + barLength);
+                    bar.setAttribute('y2', barY);
+                    bar.setAttribute('stroke', color);
+                    bar.setAttribute('stroke-width', strokeW);
+                    bar.setAttribute('stroke-linecap', 'round');
+                    bar.setAttribute('fill', 'none');
+                    g.appendChild(bar);
+
+                    // Connector line entering/leaving border
+                    const stem = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    stem.setAttribute('x1', x);
+                    stem.setAttribute('y1', y + dir * 14);
+                    stem.setAttribute('x2', x);
+                    stem.setAttribute('y2', y);
+                    stem.setAttribute('stroke', color);
+                    stem.setAttribute('stroke-width', isSelected ? '2.4' : '1.8');
+                    stem.setAttribute('stroke-linecap', 'round');
+                    stem.setAttribute('fill', 'none');
+                    g.appendChild(stem);
+                }
+            } else {
+                // MANY: Open three-line Crow’s Foot fork touching the entity border (<│)
+                // Three separate SVG strokes fanning out onto the border!
+                const forkLen = 14;
+                const forkSpread = 8;
+                const strokeW = isSelected ? '2.6' : '2.0';
+
+                if (isVerticalEdge) {
+                    // Left edge: fork opens towards right (+X, into entity)
+                    // Right edge: fork opens towards left (-X, into entity)
+                    const dir = (portName === 'left') ? -1 : 1;
+                    const bx = x + dir * forkLen; // Base vertex on the connector line
+                    const by = y;
+
+                    // Stroke 1: Top claw touching border at (x, y - spread)
+                    const l1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    l1.setAttribute('x1', bx);
+                    l1.setAttribute('y1', by);
+                    l1.setAttribute('x2', x);
+                    l1.setAttribute('y2', y - forkSpread);
+                    l1.setAttribute('stroke', color);
+                    l1.setAttribute('stroke-width', strokeW);
+                    l1.setAttribute('stroke-linecap', 'round');
+                    l1.setAttribute('fill', 'none');
+                    g.appendChild(l1);
+
+                    // Stroke 2: Center straight claw touching border at (x, y)
+                    const l2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    l2.setAttribute('x1', bx);
+                    l2.setAttribute('y1', by);
+                    l2.setAttribute('x2', x);
+                    l2.setAttribute('y2', y);
+                    l2.setAttribute('stroke', color);
+                    l2.setAttribute('stroke-width', isSelected ? '2.4' : '1.8');
+                    l2.setAttribute('stroke-linecap', 'round');
+                    l2.setAttribute('fill', 'none');
+                    g.appendChild(l2);
+
+                    // Stroke 3: Bottom claw touching border at (x, y + spread)
+                    const l3 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    l3.setAttribute('x1', bx);
+                    l3.setAttribute('y1', by);
+                    l3.setAttribute('x2', x);
+                    l3.setAttribute('y2', y + forkSpread);
+                    l3.setAttribute('stroke', color);
+                    l3.setAttribute('stroke-width', strokeW);
+                    l3.setAttribute('stroke-linecap', 'round');
+                    l3.setAttribute('fill', 'none');
+                    g.appendChild(l3);
+                } else {
+                    // Top edge: fork opens towards +Y (downwards into entity)
+                    // Bottom edge: fork opens towards -Y (upwards into entity)
+                    const dir = (portName === 'top') ? -1 : 1;
+                    const bx = x;
+                    const by = y + dir * forkLen;
+
+                    // Stroke 1: Left claw touching border at (x - spread, y)
+                    const l1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    l1.setAttribute('x1', bx);
+                    l1.setAttribute('y1', by);
+                    l1.setAttribute('x2', x - forkSpread);
+                    l1.setAttribute('y2', y);
+                    l1.setAttribute('stroke', color);
+                    l1.setAttribute('stroke-width', strokeW);
+                    l1.setAttribute('stroke-linecap', 'round');
+                    l1.setAttribute('fill', 'none');
+                    g.appendChild(l1);
+
+                    // Stroke 2: Center claw touching border at (x, y)
+                    const l2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    l2.setAttribute('x1', bx);
+                    l2.setAttribute('y1', by);
+                    l2.setAttribute('x2', x);
+                    l2.setAttribute('y2', y);
+                    l2.setAttribute('stroke', color);
+                    l2.setAttribute('stroke-width', isSelected ? '2.4' : '1.8');
+                    l2.setAttribute('stroke-linecap', 'round');
+                    l2.setAttribute('fill', 'none');
+                    g.appendChild(l2);
+
+                    // Stroke 3: Right claw touching border at (x + spread, y)
+                    const l3 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    l3.setAttribute('x1', bx);
+                    l3.setAttribute('y1', by);
+                    l3.setAttribute('x2', x + forkSpread);
+                    l3.setAttribute('y2', y);
+                    l3.setAttribute('stroke', color);
+                    l3.setAttribute('stroke-width', strokeW);
+                    l3.setAttribute('stroke-linecap', 'round');
+                    l3.setAttribute('fill', 'none');
+                    g.appendChild(l3);
+                }
+            }
+
+            // Drag handle overlay directly on the entity border
+            const handleRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            handleRect.setAttribute('class', 'cardinality-border-handle');
+            if (isVerticalEdge) {
+                const dir = (portName === 'left') ? -16 : 0;
+                handleRect.setAttribute('x', x + dir);
+                handleRect.setAttribute('y', y - 14);
+                handleRect.setAttribute('width', '16');
+                handleRect.setAttribute('height', '28');
+                handleRect.setAttribute('rx', '4');
+            } else {
+                const dir = (portName === 'top') ? -16 : 0;
+                handleRect.setAttribute('x', x - 14);
+                handleRect.setAttribute('y', y + dir);
+                handleRect.setAttribute('width', '28');
+                handleRect.setAttribute('height', '16');
+                handleRect.setAttribute('rx', '4');
+            }
+            handleRect.title = `Drag Crow’s Foot along entity ${isVerticalEdge ? 'vertical' : 'horizontal'} border`;
+            g.appendChild(handleRect);
+
+            return g;
+        }
+
+        /**
+         * Render All Relationship Connectors with:
+         * 1. Crow's Foot touching the entity border directly
+         * 2. Independently draggable Horizontal & Vertical segments
+         * 3. Fully customizable orthogonal routing
+         */
+        function renderRelationships() {
+            connectorsLayer.innerHTML = '';
+
+            relationships.forEach(rel => {
+                if (!entities[rel.from] || !entities[rel.to]) return;
+
+                const vertices = getRelationshipVertices(rel);
+                if (vertices.length < 2) return;
+
+                const isSelected = (selectedRelId === rel.id);
+                const strokeColor = isSelected ? '#2563eb' : '#475569';
+
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('class', 'rel-group' + (isSelected ? ' is-selected' : ''));
+                g.setAttribute('id', 'rel-' + rel.id);
+
+                // Build path string
+                let pathD = `M ${vertices[0].x} ${vertices[0].y}`;
+                for (let i = 1; i < vertices.length; i++) {
+                    pathD += ` L ${vertices[i].x} ${vertices[i].y}`;
+                }
+
+                // 1. Invisible wide hitarea for selecting relationship
+                const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                hitPath.setAttribute('class', 'rel-path-hitarea');
+                hitPath.setAttribute('d', pathD);
+                hitPath.setAttribute('fill', 'none');
+                hitPath.setAttribute('stroke', 'transparent');
+                hitPath.setAttribute('stroke-width', '14');
+                hitPath.onclick = (e) => {
+                    e.stopPropagation();
+                    selectRelationship(rel.id);
+                };
+                g.appendChild(hitPath);
+
+                // 2. Visible continuous connector line
+                const visPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                visPath.setAttribute('class', 'rel-path-visible');
+                visPath.setAttribute('d', pathD);
+                visPath.setAttribute('fill', 'none');
+                visPath.setAttribute('stroke', strokeColor);
+                visPath.setAttribute('stroke-width', isSelected ? '2.4' : '1.8');
+                visPath.setAttribute('stroke-linecap', 'round');
+                visPath.setAttribute('stroke-linejoin', 'round');
+                g.appendChild(visPath);
+
+                // 3. Render Independent Segment Hitareas & Drag Grips for every segment
+                for (let i = 0; i < vertices.length - 1; i++) {
+                    const pA = vertices[i];
+                    const pB = vertices[i + 1];
+                    const isHorizontal = (pA.y === pB.y);
+                    const isVertical = (pA.x === pB.x);
+
+                    if (!isHorizontal && !isVertical) continue;
+
+                    const segD = `M ${pA.x} ${pA.y} L ${pB.x} ${pB.y}`;
+
+                    // Segment hitarea
+                    const segHit = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    segHit.setAttribute('class', `segment-hitarea ${isHorizontal ? 'horizontal' : 'vertical'}`);
+                    segHit.setAttribute('d', segD);
+                    segHit.setAttribute('fill', 'none');
+                    segHit.setAttribute('stroke', 'transparent');
+                    segHit.setAttribute('stroke-width', '16');
+                    segHit.title = isHorizontal ? 'Drag horizontal line up/down' : 'Drag vertical line left/right';
+
+                    segHit.onmousedown = (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        selectRelationship(rel.id);
+                        startDraggingSegment(rel.id, i, isHorizontal, e);
+                    };
+                    g.appendChild(segHit);
+
+                    // Visual drag grip pill on segment
+                    const midX = (pA.x + pB.x) / 2;
+                    const midY = (pA.y + pB.y) / 2;
+                    const segLen = Math.hypot(pB.x - pA.x, pB.y - pA.y);
+
+                    // Show grip handle if segment is long enough
+                    if (segLen > 24) {
+                        const pill = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        pill.setAttribute('class', 'segment-drag-pill');
+                        if (isHorizontal) {
+                            pill.setAttribute('x', midX - 10);
+                            pill.setAttribute('y', midY - 3.5);
+                            pill.setAttribute('width', '20');
+                            pill.setAttribute('height', '7');
+                            pill.setAttribute('rx', '3.5');
+                            pill.style.cursor = 'ns-resize';
+                        } else {
+                            pill.setAttribute('x', midX - 3.5);
+                            pill.setAttribute('y', midY - 10);
+                            pill.setAttribute('width', '7');
+                            pill.setAttribute('height', '20');
+                            pill.setAttribute('rx', '3.5');
+                            pill.style.cursor = 'ew-resize';
+                        }
+                        pill.title = isHorizontal ? 'Drag horizontal segment vertically' : 'Drag vertical segment horizontally';
+                        pill.onmousedown = (e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            selectRelationship(rel.id);
+                            startDraggingSegment(rel.id, i, isHorizontal, e);
+                        };
+                        g.appendChild(pill);
+                    }
+                }
+
+                // 4. FROM Cardinality Symbol: Physically attached directly to from-entity border!
+                const fromSymbolG = renderAttachedCardinalitySymbol(
+                    rel.fromCard || 'one',
+                    vertices[0],
+                    rel.fromPort,
+                    'backward',
+                    strokeColor,
+                    isSelected
+                );
+                fromSymbolG.onmousedown = (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    selectRelationship(rel.id);
+                    startDraggingBorderSymbol(rel.id, 'from', e);
+                };
+                g.appendChild(fromSymbolG);
+
+                // 5. TO Cardinality Symbol (Crow's Foot): Physically attached directly to to-entity border!
+                const toSymbolG = renderAttachedCardinalitySymbol(
+                    rel.toCard || 'many',
+                    vertices[vertices.length - 1],
+                    rel.toPort,
+                    'forward',
+                    strokeColor,
+                    isSelected
+                );
+                toSymbolG.onmousedown = (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    selectRelationship(rel.id);
+                    startDraggingBorderSymbol(rel.id, 'to', e);
+                };
+                g.appendChild(toSymbolG);
+
+                // 6. Midpoint Relationship Label
+                const totalVerts = vertices.length;
+                let midPt = { x: 0, y: 0 };
+                if (totalVerts % 2 === 0) {
+                    const midSegIdx = Math.floor(totalVerts / 2) - 1;
+                    midPt.x = (vertices[midSegIdx].x + vertices[midSegIdx + 1].x) / 2;
+                    midPt.y = (vertices[midSegIdx].y + vertices[midSegIdx + 1].y) / 2;
+                } else {
+                    const midIdx = Math.floor(totalVerts / 2);
+                    midPt = vertices[midIdx];
+                }
+
+                const labelBox = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                labelBox.setAttribute('class', 'rel-label-box');
+                labelBox.onclick = (e) => {
+                    e.stopPropagation();
+                    selectRelationship(rel.id);
+                };
+
+                const labelW = Math.max(54, (rel.label || '').length * 7 + 16);
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('class', 'rel-label-rect');
+                rect.setAttribute('x', midPt.x - labelW / 2);
+                rect.setAttribute('y', midPt.y - 10);
+                rect.setAttribute('width', labelW);
+                rect.setAttribute('height', '20');
+                labelBox.appendChild(rect);
+
+                const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                txt.setAttribute('class', 'rel-label-text');
+                txt.setAttribute('x', midPt.x);
+                txt.setAttribute('y', midPt.y);
+                txt.textContent = rel.label || 'relates to';
+                labelBox.appendChild(txt);
+
+                g.appendChild(labelBox);
+
+                connectorsLayer.appendChild(g);
+            });
+        }
+
+        /**
+         * Update connectors during entity dragging
+         */
+        function updateConnectors() {
+            renderRelationships();
+        }
+
+        /**
+         * HISTORY & UNDO/REDO ENGINE
+         */
+        function pushHistoryState(actionName) {
+            // Drop any future branch if we undid actions
+            if (historyIndex < history.length - 1) {
+                history = history.slice(0, historyIndex + 1);
+            }
+
+            const snapshot = {
+                action: actionName || 'Change',
+                entities: JSON.parse(JSON.stringify(entities)),
+                relationships: JSON.parse(JSON.stringify(relationships)),
+                selectedEntityId: selectedEntityId,
+                selectedEntityIds: Array.from(selectedEntityIds),
+                selectedRelId: selectedRelId
+            };
+
+            history.push(snapshot);
+            if (history.length > MAX_HISTORY) {
+                history.shift();
+            } else {
+                historyIndex++;
+            }
+
+            window.historyStack = history;
+            window.historyIndex = historyIndex;
+            window.clipboard = clipboard;
+            updateEditMenuState();
+        }
+
+        function undo() {
+            if (historyIndex <= 0) {
+                showToast('Nothing to undo', true);
+                return;
+            }
+
+            historyIndex--;
+            const state = history[historyIndex];
+            applyHistoryState(state);
+            showToast(`Undo: ${state.action}`);
+        }
+
+        function redo() {
+            if (historyIndex >= history.length - 1) {
+                showToast('Nothing to redo', true);
+                return;
+            }
+
+            historyIndex++;
+            const state = history[historyIndex];
+            applyHistoryState(state);
+            showToast(`Redo: ${state.action}`);
+        }
+
+        function applyHistoryState(state) {
+            entities = JSON.parse(JSON.stringify(state.entities));
+            relationships = JSON.parse(JSON.stringify(state.relationships));
+            window.entities = entities;
+            window.relationships = relationships;
+
+            selectedEntityIds = new Set((state.selectedEntityIds || []).filter(id => entities[id]));
+            if (state.selectedEntityId && entities[state.selectedEntityId]) {
+                selectedEntityId = state.selectedEntityId;
+            } else if (selectedEntityIds.size > 0) {
+                selectedEntityId = selectedEntityIds.values().next().value;
+            } else {
+                selectedEntityId = null;
+            }
+
+            if (state.selectedRelId && relationships.some(r => r.id === state.selectedRelId)) {
+                selectedRelId = state.selectedRelId;
+            } else {
+                selectedRelId = null;
+                hideRelToolbar();
+            }
+
+            renderEntities();
+            renderRelationships();
+
+            document.querySelectorAll('.entity-card').forEach(c => {
+                const cId = c.getAttribute('data-id');
+                c.classList.toggle('is-selected', selectedEntityIds.has(cId) || cId === selectedEntityId);
+            });
+            document.querySelectorAll('.rel-group').forEach(r => {
+                r.classList.toggle('is-selected', r.id === 'rel-' + selectedRelId);
+            });
+
+            if (selectedRelId) {
+                selectRelationship(selectedRelId);
+            }
+
+            window.historyIndex = historyIndex;
+            updateEditMenuState();
+        }
+
+        /**
+         * CLIPBOARD & EDITING ACTIONS (COPY, CUT, PASTE, DELETE, SELECT ALL)
+         */
+        function copySelected() {
+            if (selectedEntityId && entities[selectedEntityId]) {
+                clipboard = {
+                    type: 'entity',
+                    data: JSON.parse(JSON.stringify(entities[selectedEntityId]))
+                };
+                window.clipboard = clipboard;
+                showToast(`Copied table "${entities[selectedEntityId].title}" (Ctrl+C)`);
+                updateEditMenuState();
+                return;
+            }
+
+            if (selectedEntityIds.size > 0) {
+                const firstId = selectedEntityIds.values().next().value;
+                if (firstId && entities[firstId]) {
+                    clipboard = {
+                        type: 'entity',
+                        data: JSON.parse(JSON.stringify(entities[firstId]))
+                    };
+                    window.clipboard = clipboard;
+                    showToast(`Copied table "${entities[firstId].title}" (Ctrl+C)`);
+                    updateEditMenuState();
+                    return;
+                }
+            }
+
+            if (selectedRelId) {
+                const rel = relationships.find(r => r.id === selectedRelId);
+                if (rel) {
+                    clipboard = {
+                        type: 'relationship',
+                        data: JSON.parse(JSON.stringify(rel))
+                    };
+                    window.clipboard = clipboard;
+                    const fromName = entities[rel.from]?.title || rel.from;
+                    const toName = entities[rel.to]?.title || rel.to;
+                    showToast(`Copied relationship: ${fromName} → ${toName} (Ctrl+C)`);
+                    updateEditMenuState();
+                    return;
+                }
+            }
+
+            showToast('Nothing selected to copy', true);
+        }
+
+        function cutSelected() {
+            if (selectedEntityId || selectedEntityIds.size > 0) {
+                const targetId = selectedEntityId || selectedEntityIds.values().next().value;
+                const ent = entities[targetId];
+                if (!ent) return;
+                const title = ent.title;
+
+                clipboard = {
+                    type: 'entity',
+                    data: JSON.parse(JSON.stringify(ent))
+                };
+                window.clipboard = clipboard;
+
+                delete entities[targetId];
+                relationships = relationships.filter(r => r.from !== targetId && r.to !== targetId);
+                window.relationships = relationships;
+                selectedEntityId = null;
+                selectedEntityIds.delete(targetId);
+                selectedRelId = null;
+                hideRelToolbar();
+
+                renderEntities();
+                renderRelationships();
+                pushHistoryState(`Cut Table ${title}`);
+                showToast(`Cut table "${title}" to clipboard (Ctrl+V to paste)`);
+                updateEditMenuState();
+                return;
+            }
+
+            if (selectedRelId) {
+                const rel = relationships.find(r => r.id === selectedRelId);
+                if (rel) {
+                    clipboard = {
+                        type: 'relationship',
+                        data: JSON.parse(JSON.stringify(rel))
+                    };
+                    window.clipboard = clipboard;
+                    relationships = relationships.filter(r => r.id !== selectedRelId);
+                    window.relationships = relationships;
+                    selectedRelId = null;
+                    hideRelToolbar();
+                    renderRelationships();
+                    pushHistoryState('Cut Relationship');
+                    showToast('Cut relationship to clipboard (Ctrl+V to paste)');
+                    updateEditMenuState();
+                    return;
+                }
+            }
+
+            showToast('Nothing selected to cut', true);
+        }
+
+        function pasteClipboard() {
+            if (!clipboard) {
+                showToast('Clipboard is empty', true);
+                return;
+            }
+
+            if (clipboard.type === 'entity') {
+                const orig = clipboard.data;
+                const baseId = orig.id.replace(/_copy_\d+$/, '').replace(/_copy$/, '');
+                let count = 1;
+                let newId = `${baseId}_copy`;
+                while (entities[newId]) {
+                    count++;
+                    newId = `${baseId}_copy_${count}`;
+                }
+
+                const newTitle = orig.title.includes('(COPY') ? orig.title : `${orig.title} (COPY)`;
+                const newX = (orig.x || 100) + 30;
+                const newY = (orig.y || 100) + 30;
+
+                // Advance clipboard coordinates for cascading repeated pastes
+                clipboard.data.x = newX;
+                clipboard.data.y = newY;
+
+                // Clone fields with unique IDs
+                const newFields = (orig.fields || []).map((f, i) => ({
+                    ...f,
+                    id: `f_${Date.now()}_${i}`
+                }));
+
+                const dupEntity = {
+                    ...JSON.parse(JSON.stringify(orig)),
+                    id: newId,
+                    title: newTitle,
+                    x: newX,
+                    y: newY,
+                    fields: newFields
+                };
+
+                entities[newId] = dupEntity;
+                window.entities = entities;
+
+                renderEntities();
+                renderRelationships();
+                selectEntity(newId);
+
+                pushHistoryState(`Paste Table ${newTitle}`);
+                showToast(`Pasted table "${newTitle}"`);
+                updateEditMenuState();
+                return;
+            }
+
+            if (clipboard.type === 'relationship') {
+                const origRel = clipboard.data;
+                if (!entities[origRel.from] || !entities[origRel.to]) {
+                    showToast('Cannot paste relationship: referenced table no longer exists', true);
+                    return;
+                }
+
+                const newRelId = 'rel-' + Date.now();
+                const dupRel = JSON.parse(JSON.stringify(origRel));
+                dupRel.id = newRelId;
+
+                // Slightly offset routing handles if present
+                if (dupRel.fromOffset) dupRel.fromOffset += 15;
+                if (dupRel.toOffset) dupRel.toOffset += 15;
+
+                relationships.push(dupRel);
+                window.relationships = relationships;
+
+                renderRelationships();
+                selectRelationship(newRelId);
+
+                pushHistoryState('Paste Relationship');
+                showToast('Pasted relationship');
+                updateEditMenuState();
+                return;
+            }
+        }
+
+        function deleteSelected() {
+            if (selectedRelId) {
+                deleteSelectedRelationship();
+                return;
+            }
+
+            if (selectedEntityIds.size > 1) {
+                const ids = Array.from(selectedEntityIds);
+                const count = ids.length;
+                ids.forEach(id => {
+                    delete entities[id];
+                    relationships = relationships.filter(r => r.from !== id && r.to !== id);
+                });
+                window.relationships = relationships;
+                selectedEntityId = null;
+                selectedEntityIds.clear();
+                selectedRelId = null;
+                hideRelToolbar();
+
+                renderEntities();
+                renderRelationships();
+                pushHistoryState(`Delete ${count} Tables`);
+                showToast(`Deleted ${count} tables (Ctrl+Z to undo)`);
+                updateEditMenuState();
+                return;
+            }
+
+            if (selectedEntityId && entities[selectedEntityId]) {
+                const title = entities[selectedEntityId].title;
+                delete entities[selectedEntityId];
+                relationships = relationships.filter(r => r.from !== selectedEntityId && r.to !== selectedEntityId);
+                window.relationships = relationships;
+                selectedEntityId = null;
+                selectedEntityIds.clear();
+                selectedRelId = null;
+                hideRelToolbar();
+
+                renderEntities();
+                renderRelationships();
+                pushHistoryState(`Delete Table ${title}`);
+                showToast(`Deleted table "${title}" (Ctrl+Z to undo)`);
+                updateEditMenuState();
+                return;
+            }
+
+            showToast('Nothing selected to delete', true);
+        }
+
+        function selectAllEntities() {
+            selectedRelId = null;
+            hideRelToolbar();
+            selectedEntityIds = new Set(Object.keys(entities));
+            selectedEntityId = Object.keys(entities)[0] || null;
+
+            document.querySelectorAll('.entity-card').forEach(c => c.classList.add('is-selected'));
+            document.querySelectorAll('.rel-group').forEach(r => r.classList.remove('is-selected'));
+
+            updateEditMenuState();
+            showToast(`Selected all ${selectedEntityIds.size} tables (Ctrl+A)`);
+        }
+
+        function clearSelectionOrCancel() {
+            if (isConnecting) {
+                isConnecting = false;
+                viewport.classList.remove('is-connecting-mode');
+                tempConnector.style.display = 'none';
+                hoveredTargetEntityId = null;
+                showToast('Connection cancelled');
+            }
+
+            selectedEntityId = null;
+            selectedEntityIds.clear();
+            selectedRelId = null;
+            hideRelToolbar();
+
+            document.querySelectorAll('.entity-card').forEach(c => c.classList.remove('is-selected'));
+            document.querySelectorAll('.rel-group').forEach(r => r.classList.remove('is-selected'));
+
+            closeEditMenu();
+            updateEditMenuState();
+        }
+
+        function saveDiagramLocal() {
+            try {
+                const storage = (typeof localStorage !== 'undefined') ? localStorage : (typeof window !== 'undefined' ? window.localStorage : null);
+                if (!storage) throw new Error('localStorage unavailable');
+                const state = {
+                    entities: entities,
+                    relationships: relationships,
+                    savedAt: new Date().toISOString()
+                };
+                storage.setItem('eduflex_erd_autosave', JSON.stringify(state));
+                showToast('ERD diagram saved locally (Ctrl+S)');
+            } catch (err) {
+                console.error('Save failed:', err);
+                showToast('Failed to save diagram locally', true);
+            }
+        }
+
+        // Global Window Exports
+        window.undo = undo;
+        window.redo = redo;
+        window.copySelected = copySelected;
+        window.cutSelected = cutSelected;
+        window.pasteClipboard = pasteClipboard;
+        window.deleteSelected = deleteSelected;
+        window.selectAllEntities = selectAllEntities;
+        window.clearSelectionOrCancel = clearSelectionOrCancel;
+        window.saveDiagramLocal = saveDiagramLocal;
+        window.pushHistoryState = pushHistoryState;
+        window.selectEntity = selectEntity;
+        window.selectRelationship = selectRelationship;
+        window.startDraggingEntity = startDraggingEntity;
+
+        /**
+         * EDIT MENU DROPDOWN CONTROLLER
+         */
+        function toggleEditMenu(e) {
+            e.stopPropagation();
+            const panel = document.getElementById('editMenuDropdown');
+            if (panel) panel.classList.toggle('show');
+            updateEditMenuState();
+        }
+
+        function closeEditMenu() {
+            const panel = document.getElementById('editMenuDropdown');
+            if (panel) panel.classList.remove('show');
+        }
+
+        window.addEventListener('click', (e) => {
+            if (!e.target.closest('#editMenuWrapper')) {
+                closeEditMenu();
+            }
+        });
+
+        function updateEditMenuState() {
+            const canUndo = historyIndex > 0;
+            const canRedo = historyIndex < history.length - 1;
+            const hasSelection = !!selectedEntityId || selectedEntityIds.size > 0 || !!selectedRelId;
+            const canPaste = !!clipboard;
+            const canSelectAll = Object.keys(entities).length > 0;
+
+            const undoBtn = document.getElementById('menuUndo');
+            const redoBtn = document.getElementById('menuRedo');
+            const quickUndo = document.getElementById('quickUndoBtn');
+            const quickRedo = document.getElementById('quickRedoBtn');
+            const cutBtn = document.getElementById('menuCut');
+            const copyBtn = document.getElementById('menuCopy');
+            const pasteBtn = document.getElementById('menuPaste');
+            const delBtn = document.getElementById('menuDelete');
+            const selectAllBtn = document.getElementById('menuSelectAll');
+
+            if (undoBtn) undoBtn.disabled = !canUndo;
+            if (redoBtn) redoBtn.disabled = !canRedo;
+            if (quickUndo) quickUndo.disabled = !canUndo;
+            if (quickRedo) quickRedo.disabled = !canRedo;
+            if (cutBtn) cutBtn.disabled = !hasSelection;
+            if (copyBtn) copyBtn.disabled = !hasSelection;
+            if (pasteBtn) pasteBtn.disabled = !canPaste;
+            if (delBtn) delBtn.disabled = !hasSelection;
+            if (selectAllBtn) selectAllBtn.disabled = !canSelectAll;
+        }
+
+        /**
+         * INPUT GUARDING & SHORTCUT INTERCEPTION
+         */
+        function isEditingText(e) {
+            const target = e.target;
+            if (!target) return false;
+            const tag = (target.tagName || '').toUpperCase();
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+            if (target.isContentEditable) return true;
+            if (target.closest && target.closest('input, textarea, select, [contenteditable="true"]')) return true;
+            return false;
+        }
+
+        window.addEventListener('keydown', (e) => {
+            // Guard: Allow normal Windows text editing inside inputs/textareas
+            if (isEditingText(e)) {
+                return;
+            }
+
+            const isCtrl = e.ctrlKey || e.metaKey;
+            const isShift = e.shiftKey;
+            const key = e.key;
+
+            // Ctrl + Z -> Undo
+            if (isCtrl && !isShift && (key === 'z' || key === 'Z')) {
+                e.preventDefault();
+                undo();
+                return;
+            }
+
+            // Ctrl + Y or Ctrl + Shift + Z -> Redo
+            if ((isCtrl && !isShift && (key === 'y' || key === 'Y')) ||
+                (isCtrl && isShift && (key === 'z' || key === 'Z'))) {
+                e.preventDefault();
+                redo();
+                return;
+            }
+
+            // Ctrl + C -> Copy
+            if (isCtrl && !isShift && (key === 'c' || key === 'C')) {
+                e.preventDefault();
+                copySelected();
+                return;
+            }
+
+            // Ctrl + V -> Paste
+            if (isCtrl && !isShift && (key === 'v' || key === 'V')) {
+                e.preventDefault();
+                pasteClipboard();
+                return;
+            }
+
+            // Ctrl + X -> Cut
+            if (isCtrl && !isShift && (key === 'x' || key === 'X')) {
+                e.preventDefault();
+                cutSelected();
+                return;
+            }
+
+            // Ctrl + A -> Select All
+            if (isCtrl && !isShift && (key === 'a' || key === 'A')) {
+                e.preventDefault();
+                selectAllEntities();
+                return;
+            }
+
+            // Ctrl + S -> Save diagram local
+            if (isCtrl && !isShift && (key === 's' || key === 'S')) {
+                e.preventDefault();
+                saveDiagramLocal();
+                return;
+            }
+
+            // Escape -> Clear selection / cancel current connection
+            if (key === 'Escape') {
+                e.preventDefault();
+                clearSelectionOrCancel();
+                return;
+            }
+
+            // Delete / Backspace -> Delete selected entity/relationship
+            if (key === 'Delete' || key === 'Backspace') {
+                e.preventDefault();
+                deleteSelected();
+                return;
+            }
+        });
+
+        /**
+         * Entity Selection
+         */
+        function selectEntity(id, e) {
+            if (e && (e.ctrlKey || e.metaKey)) {
+                if (selectedEntityIds.has(id)) {
+                    selectedEntityIds.delete(id);
+                    selectedEntityId = selectedEntityIds.values().next().value || null;
+                } else {
+                    selectedEntityIds.add(id);
+                    selectedEntityId = id;
+                }
+            } else {
+                selectedEntityId = id;
+                selectedEntityIds = new Set([id]);
+            }
+
+            selectedRelId = null;
+            hideRelToolbar();
+            document.querySelectorAll('.entity-card').forEach(c => {
+                const cId = c.getAttribute('data-id');
+                c.classList.toggle('is-selected', selectedEntityIds.has(cId) || cId === selectedEntityId);
+            });
+            document.querySelectorAll('.rel-group').forEach(r => r.classList.remove('is-selected'));
+            updateEditMenuState();
+        }
+
+        /**
+         * Relationship Selection & Floating Inspector Toolbar
+         */
+        function selectRelationship(id) {
+            selectedRelId = id;
+            selectedEntityId = null;
+            selectedEntityIds.clear();
+            document.querySelectorAll('.entity-card').forEach(c => c.classList.remove('is-selected'));
+            document.querySelectorAll('.rel-group').forEach(r => {
+                r.classList.toggle('is-selected', r.id === 'rel-' + id);
+            });
+
+            const rel = relationships.find(r => r.id === id);
+            if (rel && entities[rel.from] && entities[rel.to]) {
+                const fromTitle = entities[rel.from].title;
+                const toTitle = entities[rel.to].title;
+                const fromSym = rel.fromCard === 'many' ? '<' : '┼';
+                const toSym = rel.toCard === 'many' ? '<' : '┼';
+
+                document.getElementById('rel-from-entity-name').textContent = fromTitle;
+                document.getElementById('rel-to-entity-name').textContent = toTitle;
+                document.getElementById('preview-from-name').textContent = fromTitle;
+                document.getElementById('preview-to-name').textContent = toTitle;
+                document.getElementById('preview-symbols').textContent = `${fromSym}────────${toSym}`;
+
+                document.getElementById('rel-from-card').value = rel.fromCard || 'one';
+                document.getElementById('rel-to-card').value = rel.toCard || 'many';
+                document.getElementById('rel-label-input').value = rel.label || '';
+                relToolbar.style.display = 'flex';
+            }
+            renderRelationships();
+            updateEditMenuState();
+        }
+
+        function hideRelToolbar() {
+            relToolbar.style.display = 'none';
+        }
+
+        /**
+         * Relationship Cardinality Updates
+         */
+        function updateSelectedRelCardinality() {
+            if (!selectedRelId) return;
+            const rel = relationships.find(r => r.id === selectedRelId);
+            if (!rel) return;
+
+            rel.fromCard = document.getElementById('rel-from-card').value;
+            rel.toCard = document.getElementById('rel-to-card').value;
+
+            const fromTitle = entities[rel.from].title;
+            const toTitle = entities[rel.to].title;
+            const fromSym = rel.fromCard === 'many' ? '<' : '┼';
+            const toSym = rel.toCard === 'many' ? '<' : '┼';
+            document.getElementById('preview-symbols').textContent = `${fromSym}────────${toSym}`;
+
+            renderRelationships();
+            pushHistoryState('Change Cardinality');
+        }
+
+        function updateSelectedRelLabel(val) {
+            if (!selectedRelId) return;
+            const rel = relationships.find(r => r.id === selectedRelId);
+            if (!rel) return;
+            rel.label = val;
+            renderRelationships();
+        }
+
+        function applyRelPreset(preset) {
+            if (!selectedRelId) return;
+            const rel = relationships.find(r => r.id === selectedRelId);
+            if (!rel) return;
+
+            if (preset === 'one') {
+                rel.fromCard = 'one';
+                rel.toCard = 'one';
+            } else if (preset === 'many') {
+                rel.fromCard = 'many';
+                rel.toCard = 'many';
+            } else if (preset === '1:1') {
+                rel.fromCard = 'one';
+                rel.toCard = 'one';
+            } else if (preset === '1:N') {
+                rel.fromCard = 'one';
+                rel.toCard = 'many';
+            } else if (preset === 'N:M') {
+                rel.fromCard = 'many';
+                rel.toCard = 'many';
+            }
+
+            document.getElementById('rel-from-card').value = rel.fromCard;
+            document.getElementById('rel-to-card').value = rel.toCard;
+            updateSelectedRelCardinality();
+        }
+
+        function deleteSelectedRelationship() {
+            if (!selectedRelId) return;
+            relationships = relationships.filter(r => r.id !== selectedRelId);
+            window.relationships = relationships;
+            selectedRelId = null;
+            hideRelToolbar();
+            renderRelationships();
+            pushHistoryState('Delete Relationship');
+            showToast('Relationship deleted (Ctrl+Z to undo)');
+            updateEditMenuState();
+        }
+
+        function resetSelectedRelRouting() {
+            if (!selectedRelId) return;
+            const rel = relationships.find(r => r.id === selectedRelId);
+            if (!rel) return;
+            rel.bends = null;
+            rel.fromOffset = undefined;
+            rel.toOffset = undefined;
+            renderRelationships();
+            pushHistoryState('Reset Routing');
+            showToast('Routing reset to default orthogonal path');
+        }
+
+        /**
+         * DRAGGING ENTITIES
+         */
+        function startDraggingEntity(id, e) {
+            isDraggingEntity = true;
+            draggedEntityId = id;
+            dragStartSnapshot = {
+                entities: JSON.parse(JSON.stringify(entities)),
+                relationships: JSON.parse(JSON.stringify(relationships))
+            };
+            const pt = screenToSvgCoords(e.clientX, e.clientY);
+            dragOffset.x = pt.x - entities[id].x;
+            dragOffset.y = pt.y - entities[id].y;
+
+            const cardEl = document.getElementById('node-' + id);
+            if (cardEl) cardEl.classList.add('is-dragging');
+        }
+
+        /**
+         * DRAGGING CARDINALITY SYMBOL / CROW'S FOOT ALONG ENTITY BORDER
+         */
+        function startDraggingBorderSymbol(relId, endName, e) {
+            isDraggingBorderSymbol = true;
+            draggedBorderRelId = relId;
+            draggedBorderEnd = endName;
+            dragStartSnapshot = {
+                entities: JSON.parse(JSON.stringify(entities)),
+                relationships: JSON.parse(JSON.stringify(relationships))
+            };
+        }
+
+        /**
+         * DRAGGING ORTHOGONAL CONNECTOR SEGMENT (Horizontal or Vertical)
+         */
+        function startDraggingSegment(relId, segIdx, isHorizontal, e) {
+            isDraggingSegment = true;
+            draggedSegmentRelId = relId;
+            draggedSegmentIdx = segIdx;
+            isSegmentHorizontal = isHorizontal;
+            dragStartSnapshot = {
+                entities: JSON.parse(JSON.stringify(entities)),
+                relationships: JSON.parse(JSON.stringify(relationships))
+            };
+        }
+
+        /**
+         * CONNECTING PORTS (DRAG-TO-CONNECT)
+         */
+        function startConnecting(entityId, portName, e) {
+            isConnecting = true;
+            connectSource = { entityId, port: portName };
+            viewport.classList.add('is-connecting-mode');
+
+            const startPt = getEdgeCoords(entityId, portName);
+            const curPt = screenToSvgCoords(e.clientX, e.clientY);
+
+            tempConnector.style.display = 'block';
+            tempConnector.setAttribute('d', `M ${startPt.x} ${startPt.y} L ${curPt.x} ${curPt.y}`);
+        }
+
+        /**
+         * Window-level Mouse Move
+         * Handles:
+         * 1. Entity box dragging
+         * 2. Crow's Foot / One symbol constrained along entity border
+         * 3. Horizontal segment dragging (vertically)
+         * 4. Vertical segment dragging (horizontally)
+         * 5. Drag-to-connect wire
+         * 6. Canvas panning
+         */
+        window.addEventListener('mousemove', (e) => {
+            const pt = screenToSvgCoords(e.clientX, e.clientY);
+
+            // 1. Dragging Table Entity
+            if (isDraggingEntity && draggedEntityId) {
+                entities[draggedEntityId].x = Math.round(pt.x - dragOffset.x);
+                entities[draggedEntityId].y = Math.round(pt.y - dragOffset.y);
+
+                const cardEl = document.getElementById('node-' + draggedEntityId);
+                if (cardEl) {
+                    cardEl.setAttribute('transform', `translate(${entities[draggedEntityId].x}, ${entities[draggedEntityId].y})`);
+                }
+                updateConnectors();
+                return;
+            }
+
+            // 2. Dragging Crow's Foot / One Symbol Constrained to Entity Border
+            if (isDraggingBorderSymbol && draggedBorderRelId) {
+                const rel = relationships.find(r => r.id === draggedBorderRelId);
+                if (rel) {
+                    const isFrom = (draggedBorderEnd === 'from');
+                    const entId = isFrom ? rel.from : rel.to;
+                    const ent = entities[entId];
+                    if (ent) {
+                        const portName = isFrom ? rel.fromPort : rel.toPort;
+                        const isVerticalEdge = (portName === 'left' || portName === 'right');
+
+                        if (isVerticalEdge) {
+                            // Constrain up and down along left/right border
+                            const newYOffset = Math.max(20, Math.min(ent.h - 15, Math.round(pt.y - ent.y)));
+                            if (isFrom) rel.fromOffset = newYOffset;
+                            else rel.toOffset = newYOffset;
+                        } else {
+                            // Constrain left and right along top/bottom border
+                            const newXOffset = Math.max(20, Math.min(ent.w - 20, Math.round(pt.x - ent.x)));
+                            if (isFrom) rel.fromOffset = newXOffset;
+                            else rel.toOffset = newXOffset;
+                        }
+                        renderRelationships();
+                    }
+                }
+                return;
+            }
+
+            // 3. Dragging Horizontal or Vertical Connector Segment
+            if (isDraggingSegment && draggedSegmentRelId !== null && draggedSegmentIdx !== null) {
+                const rel = relationships.find(r => r.id === draggedSegmentRelId);
+                if (rel) {
+                    const vertices = getRelationshipVertices(rel);
+                    const idx = draggedSegmentIdx;
+                    const numSegs = vertices.length - 1;
+
+                    if (isSegmentHorizontal) {
+                        // Horizontal segment: drag vertically (adjusts Y coordinate)
+                        const newY = Math.round(pt.y);
+
+                        if (idx === 0 && (rel.fromPort === 'left' || rel.fromPort === 'right')) {
+                            // First segment touching from-entity border
+                            const fromEnt = entities[rel.from];
+                            rel.fromOffset = Math.max(20, Math.min(fromEnt.h - 15, newY - fromEnt.y));
+                        } else if (idx === numSegs - 1 && (rel.toPort === 'left' || rel.toPort === 'right')) {
+                            // Last segment touching to-entity border
+                            const toEnt = entities[rel.to];
+                            rel.toOffset = Math.max(20, Math.min(toEnt.h - 15, newY - toEnt.y));
+                        } else {
+                            // Intermediate horizontal segment
+                            // Segment goes from vertices[idx] to vertices[idx+1]
+                            // Adjust the corresponding bend points
+                            const bendIdx1 = idx - 1;
+                            const bendIdx2 = idx;
+                            if (rel.bends[bendIdx1]) rel.bends[bendIdx1].y = newY;
+                            if (rel.bends[bendIdx2]) rel.bends[bendIdx2].y = newY;
+                        }
+                    } else {
+                        // Vertical segment: drag horizontally (adjusts X coordinate)
+                        const newX = Math.round(pt.x);
+
+                        if (idx === 0 && (rel.fromPort === 'top' || rel.fromPort === 'bottom')) {
+                            // First segment touching from-entity border
+                            const fromEnt = entities[rel.from];
+                            rel.fromOffset = Math.max(20, Math.min(fromEnt.w - 20, newX - fromEnt.x));
+                        } else if (idx === numSegs - 1 && (rel.toPort === 'top' || rel.toPort === 'bottom')) {
+                            // Last segment touching to-entity border
+                            const toEnt = entities[rel.to];
+                            rel.toOffset = Math.max(20, Math.min(toEnt.w - 20, newX - toEnt.x));
+                        } else {
+                            // Intermediate vertical segment
+                            const bendIdx1 = idx - 1;
+                            const bendIdx2 = idx;
+                            if (rel.bends[bendIdx1]) rel.bends[bendIdx1].x = newX;
+                            if (rel.bends[bendIdx2]) rel.bends[bendIdx2].x = newX;
+                        }
+                    }
+                    renderRelationships();
+                }
+                return;
+            }
+
+            // 4. Drag-to-Connect wire
+            if (isConnecting) {
+                const startPt = getEdgeCoords(connectSource.entityId, connectSource.port);
+                tempConnector.setAttribute('d', `M ${startPt.x} ${startPt.y} L ${pt.x} ${pt.y}`);
+
+                const targetNode = e.target.closest('.entity-card');
+                if (targetNode && targetNode.getAttribute('data-id') !== connectSource.entityId) {
+                    hoveredTargetEntityId = targetNode.getAttribute('data-id');
+                } else {
+                    hoveredTargetEntityId = null;
+                }
+                return;
+            }
+
+            // 5. Canvas Panning
+            if (isPanning) {
+                const x = e.pageX - viewport.offsetLeft;
+                const y = e.pageY - viewport.offsetTop;
+                viewport.scrollLeft = scrollStart.left - (x - panStart.x);
+                viewport.scrollTop = scrollStart.top - (y - panStart.y);
+            }
+        });
+
+        /**
+         * Window-level Mouse Up
+         */
+        window.addEventListener('mouseup', (e) => {
+            if (isDraggingEntity && draggedEntityId) {
+                const cardEl = document.getElementById('node-' + draggedEntityId);
+                if (cardEl) cardEl.classList.remove('is-dragging');
+
+                if (dragStartSnapshot && dragStartSnapshot.entities[draggedEntityId]) {
+                    const origX = dragStartSnapshot.entities[draggedEntityId].x;
+                    const origY = dragStartSnapshot.entities[draggedEntityId].y;
+                    const curX = entities[draggedEntityId].x;
+                    const curY = entities[draggedEntityId].y;
+                    if (origX !== curX || origY !== curY) {
+                        pushHistoryState(`Move Table ${entities[draggedEntityId].title}`);
+                    }
+                }
+
+                isDraggingEntity = false;
+                draggedEntityId = null;
+                dragStartSnapshot = null;
+            }
+
+            if (isDraggingBorderSymbol) {
+                if (dragStartSnapshot && JSON.stringify(dragStartSnapshot.relationships) !== JSON.stringify(relationships)) {
+                    pushHistoryState("Move Cardinality Symbol");
+                }
+                isDraggingBorderSymbol = false;
+                draggedBorderRelId = null;
+                draggedBorderEnd = null;
+                dragStartSnapshot = null;
+            }
+
+            if (isDraggingSegment) {
+                if (dragStartSnapshot && JSON.stringify(dragStartSnapshot.relationships) !== JSON.stringify(relationships)) {
+                    pushHistoryState("Move Connector Segment");
+                }
+                isDraggingSegment = false;
+                draggedSegmentRelId = null;
+                draggedSegmentIdx = null;
+                dragStartSnapshot = null;
+            }
+
+            if (isConnecting) {
+                isConnecting = false;
+                viewport.classList.remove('is-connecting-mode');
+                tempConnector.style.display = 'none';
+
+                const targetNode = e.target.closest('.entity-card');
+                const targetId = targetNode ? targetNode.getAttribute('data-id') : hoveredTargetEntityId;
+
+                if (targetId && targetId !== connectSource.entityId) {
+                    const newRelId = 'rel-' + Date.now();
+                    const newRel = {
+                        id: newRelId,
+                        from: connectSource.entityId,
+                        to: targetId,
+                        fromCard: 'one',
+                        toCard: 'many',
+                        label: 'relates to',
+                        fromPort: connectSource.port,
+                        toPort: 'left',
+                        fromOffset: null,
+                        toOffset: null,
+                        bends: null
+                    };
+                    relationships.push(newRel);
+                    window.relationships = relationships;
+                    renderRelationships();
+                    selectRelationship(newRelId);
+                    pushHistoryState('Create Relationship');
+                    showToast('Relationship created');
+                }
+                hoveredTargetEntityId = null;
+            }
+
+            if (isPanning) {
+                isPanning = false;
+                viewport.classList.remove('is-panning');
+            }
+        });
+
+        // Viewport Mousedown for Panning Canvas
+        viewport.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.entity-card') || e.target.closest('.rel-group') || e.target.closest('#rel-toolbar') || e.target.closest('.cardinality-border-group') || e.target.closest('.segment-hitarea')) return;
+            isPanning = true;
+            viewport.classList.add('is-panning');
+            panStart = { x: e.pageX - viewport.offsetLeft, y: e.pageY - viewport.offsetTop };
+            scrollStart = { left: viewport.scrollLeft, top: viewport.scrollTop };
+
+            selectedEntityId = null;
+            selectedRelId = null;
+            hideRelToolbar();
+            document.querySelectorAll('.entity-card').forEach(c => c.classList.remove('is-selected'));
+            document.querySelectorAll('.rel-group').forEach(r => r.classList.remove('is-selected'));
+        });
+
+        /**
+         * ENTITY & FIELD EDITING FUNCTIONS
+         */
+        function renameEntity(id) {
+            const currentTitle = entities[id].title;
+            const newTitle = prompt('Enter new table name:', currentTitle);
+            if (newTitle && newTitle.trim() !== '') {
+                entities[id].title = newTitle.trim().toUpperCase();
+                renderEntities();
+                renderRelationships();
+                pushHistoryState(`Rename Table to ${entities[id].title}`);
+                showToast(`Table renamed to ${entities[id].title}`);
+            }
+        }
+
+        function deleteEntity(id) {
+            if (confirm(`Delete table "${entities[id].title}" and all its relationships?`)) {
+                const title = entities[id].title;
+                delete entities[id];
+                relationships = relationships.filter(r => r.from !== id && r.to !== id);
+                window.relationships = relationships;
+                selectedEntityId = null;
+                selectedEntityIds.delete(id);
+                selectedRelId = null;
+                hideRelToolbar();
+                renderEntities();
+                renderRelationships();
+                pushHistoryState(`Delete Table ${title}`);
+                showToast('Table deleted');
+                updateEditMenuState();
+            }
+        }
+
+        function toggleFieldKey(entId, fieldIdx) {
+            const f = entities[entId].fields[fieldIdx];
+            if (f.key === 'PK') f.key = 'FK';
+            else if (f.key === 'FK') f.key = '';
+            else f.key = 'PK';
+            renderEntities();
+            pushHistoryState('Toggle Column Key');
+        }
+
+        function addNewField(entId) {
+            const defaultName = 'new_column';
+            const defaultType = 'VARCHAR(50)';
+            entities[entId].fields.push({
+                id: 'f' + Date.now(),
+                key: '',
+                name: defaultName,
+                type: defaultType
+            });
+            renderEntities();
+            renderRelationships();
+            pushHistoryState('Add Column');
+            showToast('Field added');
+        }
+
+        function deleteField(entId, fieldIdx) {
+            entities[entId].fields.splice(fieldIdx, 1);
+            renderEntities();
+            renderRelationships();
+            pushHistoryState('Delete Column');
+            showToast('Field deleted');
+        }
+
+        function openEditFieldModal(entId, fieldIdx) {
+            editingEntityId = entId;
+            editingFieldIdx = fieldIdx;
+            const f = entities[entId].fields[fieldIdx];
+            document.getElementById('editFieldTitle').textContent = `Edit Field: ${entities[entId].title}.${f.name}`;
+            document.getElementById('editFieldName').value = f.name;
+            document.getElementById('editFieldType').value = f.type;
+            document.getElementById('editFieldKey').value = f.key || '';
+            document.getElementById('editFieldModal').style.display = 'flex';
+        }
+
+        function closeEditFieldModal() {
+            document.getElementById('editFieldModal').style.display = 'none';
+        }
+
+        function submitEditField() {
+            if (editingEntityId && editingFieldIdx !== null) {
+                const f = entities[editingEntityId].fields[editingFieldIdx];
+                f.name = document.getElementById('editFieldName').value.trim() || f.name;
+                f.type = document.getElementById('editFieldType').value.trim() || f.type;
+                f.key = document.getElementById('editFieldKey').value;
+                closeEditFieldModal();
+                renderEntities();
+                pushHistoryState(`Edit Column ${f.name}`);
+                showToast('Field updated');
+            }
+        }
+
+        function openNewEntityModal() {
+            document.getElementById('newEntityName').value = '';
+            document.getElementById('newEntityModal').style.display = 'flex';
+            setTimeout(() => document.getElementById('newEntityName').focus(), 50);
+        }
+
+        function closeNewEntityModal() {
+            document.getElementById('newEntityModal').style.display = 'none';
+        }
+
+        function submitNewEntity() {
+            const name = document.getElementById('newEntityName').value.trim().toUpperCase();
+            if (!name) return;
+            const domain = document.getElementById('newEntityDomain').value;
+            const newId = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+
+            const newEnt = {
+                id: newId,
+                title: name,
+                domain: domain,
+                badge: 'CUSTOM',
+                color: domain === 'student' ? '#2563eb' : (domain === 'instructor' ? '#0d9488' : '#7c3aed'),
+                x: 80 + Math.floor(Math.random() * 300),
+                y: 500 + Math.floor(Math.random() * 200),
+                w: 260,
+                fields: [
+                    { id: 'f1', key: 'PK', name: newId + '_id', type: 'UUID' },
+                    { id: 'f2', key: '', name: 'name', type: 'VARCHAR(100)' },
+                    { id: 'f3', key: '', name: 'created_at', type: 'TIMESTAMP' }
+                ]
+            };
+
+            entities[newId] = newEnt;
+            closeNewEntityModal();
+            renderEntities();
+            selectEntity(newId);
+            pushHistoryState(`Add Table ${name}`);
+            showToast(`Created entity ${name}`);
+        }
+
+        function resetDefaultEduFlexLayout() {
+            if (confirm('Reset ERD diagram to original EduFlex default layout and tables?')) {
+                entities = JSON.parse(JSON.stringify(initialEntities));
+                relationships = JSON.parse(JSON.stringify(initialRelationships));
+                window.entities = entities;
+                window.relationships = relationships;
+                selectedEntityId = null;
+                selectedEntityIds.clear();
+                selectedRelId = null;
+                renderEntities();
+                renderRelationships();
+                pushHistoryState('Reset to Default Layout');
+                showToast('Reset to default layout');
+                updateEditMenuState();
+            }
+        }
+
+        /**
+         * EXPORT ERD AS 3× HIGH-RESOLUTION PNG IMAGE
+         * Full diagram bounding box, solid white background, zero black polygons,
+         * crisp typography, thin connector strokes, and open 3-line Crow’s Foot symbols.
+         */
+        function exportPngImage() {
+            showToast('Generating 3× high-resolution PNG image...');
+
+            // 1. Compute true bounding box covering all entities and connectors
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+            Object.values(entities).forEach(ent => {
+                const h = ent.h || calculateTableHeight(ent);
+                minX = Math.min(minX, ent.x);
+                minY = Math.min(minY, ent.y);
+                maxX = Math.max(maxX, ent.x + ent.w);
+                maxY = Math.max(maxY, ent.y + h);
+            });
+
+            relationships.forEach(rel => {
+                const verts = getRelationshipVertices(rel);
+                verts.forEach(p => {
+                    minX = Math.min(minX, p.x - 25);
+                    minY = Math.min(minY, p.y - 25);
+                    maxX = Math.max(maxX, p.x + 25);
+                    maxY = Math.max(maxY, p.y + 25);
+                });
+            });
+
+            if (!isFinite(minX) || !isFinite(minY)) {
+                minX = 0; minY = 0; maxX = 2100; maxY = 1350;
+            }
+
+            const pad = 50;
+            const expX = Math.floor(minX - pad);
+            const expY = Math.floor(minY - pad);
+            const expW = Math.ceil(maxX - minX + pad * 2);
+            const expH = Math.ceil(maxY - minY + pad * 2);
+
+            // 2. Clone SVG DOM
+            const clone = svgEl.cloneNode(true);
+            clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            clone.setAttribute('width', expW);
+            clone.setAttribute('height', expH);
+            clone.setAttribute('viewBox', `${expX} ${expY} ${expW} ${expH}`);
+
+            // 3. Strip editor UI controls, buttons, drag handles, ports, and hitareas from export
+            const cleanSelectors = [
+                '.port-handle',
+                '.field-delete-btn',
+                '.add-field-btn',
+                '.cardinality-border-handle',
+                '.segment-drag-pill',
+                '.segment-hitarea',
+                '.rel-path-hitarea',
+                '#temp-connector'
+            ];
+
+            cleanSelectors.forEach(sel => {
+                clone.querySelectorAll(sel).forEach(el => el.remove());
+            });
+
+            // Strip editor pencil / trash icons from table headers
+            clone.querySelectorAll('text').forEach(t => {
+                if (t.textContent === '✏️' || t.textContent === '🗑️') {
+                    t.remove();
+                }
+            });
+
+            // Strip selection and dragging highlight classes for pristine presentation
+            clone.querySelectorAll('.is-selected').forEach(el => el.classList.remove('is-selected'));
+            clone.querySelectorAll('.is-dragging').forEach(el => el.classList.remove('is-dragging'));
+
+            // 4. Ensure EVERY path in connectors layer has explicit fill="none", stroke, and stroke-width
+            clone.querySelectorAll('path').forEach(p => {
+                const cls = p.getAttribute('class') || '';
+                if (cls.includes('rel-path-visible') || p.closest('#connectors-layer')) {
+                    p.setAttribute('fill', 'none');
+                    p.setAttribute('stroke', '#475569');
+                    p.setAttribute('stroke-width', '1.8');
+                    p.setAttribute('stroke-linecap', 'round');
+                    p.setAttribute('stroke-linejoin', 'round');
+                }
+            });
+
+            // 5. Ensure EVERY line element (Crow’s Foot open 3 strokes, One bars) has explicit fill="none" and stroke
+            clone.querySelectorAll('line').forEach(l => {
+                l.setAttribute('fill', 'none');
+                if (!l.getAttribute('stroke')) l.setAttribute('stroke', '#475569');
+                if (!l.getAttribute('stroke-width')) l.setAttribute('stroke-width', '2.0');
+                l.setAttribute('stroke-linecap', 'round');
+            });
+
+            // 6. Ensure relationship label rects and texts render with crisp contrast
+            clone.querySelectorAll('.rel-label-rect').forEach(r => {
+                r.setAttribute('fill', '#ffffff');
+                r.setAttribute('stroke', '#cbd5e1');
+                r.setAttribute('stroke-width', '1');
+            });
+
+            clone.querySelectorAll('.rel-label-text').forEach(t => {
+                t.setAttribute('fill', '#475569');
+                t.setAttribute('font-family', '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif');
+                t.setAttribute('font-size', '10');
+                t.setAttribute('font-weight', '600');
+                t.setAttribute('text-anchor', 'middle');
+                t.setAttribute('dominant-baseline', 'central');
+            });
+
+            // 7. Inject self-contained styles into clone <defs> so font rendering & SVG styling are 100% autonomous
+            let defs = clone.querySelector('defs');
+            if (!defs) {
+                defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                clone.insertBefore(defs, clone.firstChild);
+            }
+
+            const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+            styleEl.textContent = `
+                text {
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                }
+                .rel-path-visible {
+                    fill: none !important;
+                    stroke: #475569 !important;
+                    stroke-width: 1.8 !important;
+                    stroke-linecap: round !important;
+                    stroke-linejoin: round !important;
+                }
+                line {
+                    fill: none !important;
+                    stroke-linecap: round !important;
+                }
+                .rel-label-rect {
+                    fill: #ffffff !important;
+                    stroke: #cbd5e1 !important;
+                    stroke-width: 1 !important;
+                }
+                .rel-label-text {
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+                    font-size: 10px !important;
+                    font-weight: 600 !important;
+                    fill: #475569 !important;
+                    text-anchor: middle !important;
+                    dominant-baseline: central !important;
+                }
+            `;
+            defs.appendChild(styleEl);
+
+            // 8. Ensure solid pure white background rect is first child
+            const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bgRect.setAttribute('x', expX);
+            bgRect.setAttribute('y', expY);
+            bgRect.setAttribute('width', expW);
+            bgRect.setAttribute('height', expH);
+            bgRect.setAttribute('fill', '#ffffff');
+            clone.insertBefore(bgRect, clone.firstChild);
+
+            // 9. High-resolution (3×) Canvas configuration
+            const scaleFactor = 3;
+            const canvas = document.createElement('canvas');
+            canvas.width = expW * scaleFactor;
+            canvas.height = expH * scaleFactor;
+            const ctx = canvas.getContext('2d');
+
+            // Solid white background on canvas (guarantees pure white PNG)
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+
+            // 10. Serialize SVG to XML
+            const svgXml = new XMLSerializer().serializeToString(clone);
+            const svgBlob = new Blob([svgXml], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+
+            img.onload = () => {
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                URL.revokeObjectURL(url);
+
+                if (canvas.toBlob) {
+                    canvas.toBlob((blob) => {
+                        if (!blob) {
+                            downloadDataUrlFallback(canvas);
+                            return;
+                        }
+                        const pngUrl = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = pngUrl;
+                        a.download = 'eduflex_erd_schema_diagram.png';
+                        a.setAttribute('download', 'eduflex_erd_schema_diagram.png');
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(pngUrl), 2000);
+                        showToast('PNG diagram exported successfully (3× resolution)!');
+                    }, 'image/png');
+                } else {
+                    downloadDataUrlFallback(canvas);
+                }
+            };
+
+            img.onerror = () => {
+                URL.revokeObjectURL(url);
+                showToast('Error exporting PNG diagram');
+            };
+
+            img.src = url;
+        }
+
+        function downloadDataUrlFallback(canvas) {
+            const pngUrl = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = pngUrl;
+            a.download = 'eduflex_erd_schema_diagram.png';
+            a.setAttribute('download', 'eduflex_erd_schema_diagram.png');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast('PNG diagram exported successfully (3× resolution)!');
+        }
+
+        // Backwards compatibility alias
+        window.exportJpgImage = exportPngImage;
+
+        function exportSqlSchema() {
+            let sql = '-- EduFlex LMS Database Schema DDL\n-- Generated from Interactive ERD Studio\n\n';
+            Object.values(entities).forEach(ent => {
+                sql += `CREATE TABLE ${ent.title.toLowerCase()} (\n`;
+                const cols = ent.fields.map(f => {
+                    let col = `    ${f.name.padEnd(20)} ${f.type}`;
+                    if (f.key === 'PK') col += ' PRIMARY KEY';
+                    return col;
+                });
+                sql += cols.join(',\n') + '\n);\n\n';
+            });
+
+            relationships.forEach(rel => {
+                sql += `-- Relationship: ${entities[rel.from].title} (${rel.fromCard}) -> ${entities[rel.to].title} (${rel.toCard})\n`;
+            });
+
+            const blob = new Blob([sql], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'eduflex_schema.sql';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('SQL DDL exported');
+        }
+
+        /**
+         * VIEWPORT ZOOM CONTROLS
+         */
+        function updateZoom() {
+            scaleWrapper.style.transform = `scale(${currentZoom})`;
+            zoomDisplay.textContent = `${Math.round(currentZoom * 100)}%`;
+        }
+
+        function zoomIn() {
+            if (currentZoom < maxZoom) {
+                currentZoom = Math.min(maxZoom, currentZoom + 0.15);
+                updateZoom();
+            }
+        }
+
+        function zoomOut() {
+            if (currentZoom > minZoom) {
+                currentZoom = Math.max(minZoom, currentZoom - 0.15);
+                updateZoom();
+            }
+        }
+
+        function resetZoom() {
+            currentZoom = 1.0;
+            updateZoom();
+            viewport.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+        }
+
+        function fitToScreen() {
+            const availW = viewport.clientWidth - 80;
+            const targetW = 2100;
+            currentZoom = Math.max(minZoom, Math.min(1.0, availW / targetW));
+            updateZoom();
+        }
+
+        // Ctrl + Wheel Zoom
+        viewport.addEventListener('wheel', (e) => {
+            if (e.ctrlKey) {
+                e.preventDefault();
+                if (e.deltaY < 0) zoomIn();
+                else zoomOut();
+            }
+        }, { passive: false });
+
+        // Initial setup on load
+        window.addEventListener('load', () => {
+            try {
+                const storage = (typeof localStorage !== 'undefined') ? localStorage : (typeof window !== 'undefined' ? window.localStorage : null);
+                if (storage) {
+                    const saved = storage.getItem('eduflex_erd_autosave');
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        if (parsed && parsed.entities && parsed.relationships) {
+                            entities = parsed.entities;
+                            relationships = parsed.relationships;
+                            window.entities = entities;
+                            window.relationships = relationships;
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('Could not load autosaved diagram:', err);
+            }
+
+            renderEntities();
+            renderRelationships();
+            fitToScreen();
+            pushHistoryState('Initial State');
+            updateEditMenuState();
+        });
+    </script>
+</body>
+</html>
